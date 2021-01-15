@@ -15,7 +15,7 @@ pub trait Intersect: WithRegion {
         Bed3 {
             chrom: self.chrom().to_owned(),
             left: self.left().max(other.left()),
-            right: self.right().max(other.right()),
+            right: self.right().min(other.right()),
         }
     }
 }
