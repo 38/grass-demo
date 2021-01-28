@@ -5,11 +5,15 @@ use std::io::{Result, Write};
 mod bamsupport {
     use super::*;
 
-    use d4_hts::{Alignment, AlignmentReader, BamFile};
+    use std::rc::Rc;
+    use d4_hts::{Alignment, AlignmentReader};
 
+    pub use d4_hts::BamFile;
+
+    #[derive(Clone)]
     pub struct BAMRecord<'a> {
         chrom_name: &'a str,
-        record: Alignment<'a>,
+        record: Rc<Alignment<'a>>,
     }
 
     impl<'a> BAMRecord<'a> {
@@ -18,7 +22,7 @@ mod bamsupport {
             let iter = file.to_alignment_iter();
             iter.map(|res| res.unwrap()).map(move |record| BAMRecord {
                 chrom_name: chrom_list[record.ref_id() as usize],
-                record,
+                record: Rc::new(record),
             })
         }
     }
