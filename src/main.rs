@@ -1,13 +1,15 @@
-mod algorithms;
+//mod algorithms;
+mod algorithm;
 mod properties;
 mod records;
 
-use algorithms::{intersect_sorted_file, Intersect};
-use properties::{Parsable, Serializable, WithRegion};
-use records::{Bed3, Bed4};
-use std::env::args;
+use std::io::{BufRead, BufReader, Result, BufWriter, Write};
 use std::fs::File;
-use std::io::{BufRead, BufReader, BufWriter, Result, Write};
+use std::env::args;
+
+use records::{Bed3, Bed4};
+use properties::{Parsable, Serializable};
+use algorithm::Intersect;
 
 fn parse_file<T: Parsable>(path: &str) -> Result<impl Iterator<Item = Option<T>>> {
     let file = BufReader::new(File::open(path)?);
@@ -22,25 +24,17 @@ fn parse_file<T: Parsable>(path: &str) -> Result<impl Iterator<Item = Option<T>>
 fn main() -> Result<()> {
     let args: Vec<_> = args().skip(1).take(3).collect();
 
-    let bed3_file = parse_file::<Bed3>(&args[0])?.map(|x| x.unwrap());
+    let bed3_file = parse_file::<Bed3<String>>(&args[0])?.map(|x| x.unwrap());
     #[cfg(not(feature = "d4-hts"))]
-    let bed4_file = parse_file::<Bed4>(&args[1])?.map(|x| x.unwrap());
-
-    #[cfg(feature = "d4-hts")]
-    let bam_file = d4_hts::BamFile::open(&args[1]).unwrap();
-
-    #[cfg(feature = "d4-hts")]
-    let bed4_file = records::BAMRecord::iter_of(&bam_file);
-
+    let bed4_file = parse_file::<Bed4<String>>(&args[1])?.map(|x| x.unwrap());
+    
     let mut out_file = BufWriter::new(File::create(&args[2])?);
 
-    intersect_sorted_file(bed3_file, bed4_file, |a, b| {
-        let intersection = a.intersect(b);
-        if !intersection.empty() {
-            intersection.dump(&mut out_file).ok();
-            out_file.write(b"\n").ok();
-        }
-        true
-    });
+    for pair in bed3_file.intersect(bed4_file) {
+        let result = Bed3::new(&pair);
+        result.dump(&mut out_file)?;
+        out_file.write_all(b"\n")?;
+    }
+
     Ok(())
 }

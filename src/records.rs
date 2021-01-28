@@ -41,24 +41,32 @@ mod bamsupport {
 #[cfg(feature = "d4-hts")]
 pub use bamsupport::*;
 
-pub struct Bed3 {
+#[derive(Clone)]
+pub struct Bed3<T: AsRef<str>> {
     pub left: u32,
     pub right: u32,
-    pub chrom: String,
+    pub chrom: T,
 }
 
-impl Bed3 {
+impl <T: AsRef<str>> Bed3<T> {
     #[allow(dead_code)]
-    pub fn new<T: WithRegion>(region: &T) -> Self {
+    pub fn to_borrowed(&self) -> Bed3<&str> {
+        Bed3::new(self)
+    }
+}
+
+impl <'a> Bed3<&'a str> {
+    #[allow(dead_code)]
+    pub fn new<T: WithRegion>(region: &'a T) -> Self {
         Self {
             left: region.left(),
             right: region.right(),
-            chrom: region.chrom().to_owned(),
+            chrom: region.chrom(),
         }
     }
 }
 
-impl Parsable for Bed3 {
+impl Parsable for Bed3<String> {
     fn parse<'a, T: Iterator<Item = &'a str>>(tokens: &mut T) -> Option<Self> {
         Some(Self {
             chrom: tokens.next()?.to_string(),
@@ -91,7 +99,7 @@ fn write_number<W: Write>(mut fp: W, mut n: u32) -> Result<()> {
     }
 }
 
-impl Serializable for Bed3 {
+impl <T: AsRef<str>> Serializable for Bed3<T> {
     fn dump<W: Write>(&self, mut fp: W) -> Result<()> {
         fp.write_all(self.chrom().as_bytes())?;
         fp.write(b"\t")?;
@@ -101,7 +109,7 @@ impl Serializable for Bed3 {
     }
 }
 
-impl WithRegion for Bed3 {
+impl <T: AsRef<str>> WithRegion for Bed3<T> {
     fn left(&self) -> u32 {
         self.left
     }
@@ -111,16 +119,17 @@ impl WithRegion for Bed3 {
     }
 
     fn chrom(&self) -> &str {
-        &self.chrom
+        self.chrom.as_ref()
     }
 }
 
-pub struct Bed4 {
-    core: Bed3,
-    name: String,
+#[derive(Clone)]
+pub struct Bed4<T: AsRef<str>> {
+    core: Bed3<T>,
+    name: T,
 }
 
-impl WithRegion for Bed4 {
+impl <T: AsRef<str>> WithRegion for Bed4<T> {
     fn left(&self) -> u32 {
         self.core.left()
     }
@@ -134,13 +143,13 @@ impl WithRegion for Bed4 {
     }
 }
 
-impl WithName for Bed4 {
+impl <T:AsRef<str>> WithName for Bed4<T> {
     fn name(&self) -> &str {
-        &self.name
+        self.name.as_ref()
     }
 }
 
-impl Parsable for Bed4 {
+impl Parsable for Bed4<String> {
     fn parse<'a, T: Iterator<Item = &'a str>>(tokens: &mut T) -> Option<Self> {
         let core = Bed3::parse(tokens)?;
         Some(Self {
@@ -150,7 +159,7 @@ impl Parsable for Bed4 {
     }
 }
 
-impl Serializable for Bed4 {
+impl <T: AsRef<str>> Serializable for Bed4<T> {
     fn dump<W: Write>(&self, mut fp: W) -> Result<()> {
         self.core.dump(&mut fp)?;
         fp.write(b"\t")?;
@@ -158,12 +167,12 @@ impl Serializable for Bed4 {
     }
 }
 
-impl Bed4 {
+impl <'a> Bed4<&'a str> {
     #[allow(dead_code)]
-    pub fn with_name<T: WithRegion>(region: &T, name: &str) -> Self {
+    pub fn with_name<T: WithRegion + 'a>(region: &'a T, name: &'a str) -> Self {
         Self {
             core: Bed3::new(region),
-            name: name.to_owned(),
+            name,
         }
     }
 }

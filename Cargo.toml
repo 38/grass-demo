@@ -8,3 +8,6 @@ edition = "2018"
 
 [dependencies]
 d4-hts = {version = "0.1.16", optional=true}
+
+[profile.release]
+debug = true
