@@ -62,7 +62,7 @@ where
 
     fn remove_inactive_regions(&mut self, active_limit: u32) {
         while let Some(top) = self.active_regions.peek() {
-            if top.right() <= active_limit {
+            if top.end() <= active_limit {
                 self.active_regions.pop();
             } else {
                 break;
@@ -71,11 +71,11 @@ where
     }
 
     fn push_frontier(&mut self) -> Option<u32> {
-        let new_frontier = self.peek_buffer.as_ref()?.left();
+        let new_frontier = self.peek_buffer.as_ref()?.begin();
         let chrom = self.peek_buffer.as_ref()?.chrom().to_owned();
 
         while let Some(region) = self.peek_buffer.as_ref() {
-            if region.left() == new_frontier && chrom == region.chrom() {
+            if region.begin() == new_frontier && chrom == region.chrom() {
                 self.frontier.push(self.peek_buffer.take().unwrap());
                 self.peek_buffer = self.iter.next();
             } else {
@@ -94,7 +94,7 @@ where
 
     fn ingest_active_regions(&mut self, chrom: &str, active_limit: u32) {
         while let Some(region) = self.peek_buffer.as_ref() {
-            if region.left() <= active_limit && region.chrom() == chrom {
+            if region.begin() <= active_limit && region.chrom() == chrom {
                 self.active_regions.push(self.peek_buffer.take().unwrap());
                 self.peek_buffer = self.iter.next();
             } else {
@@ -131,7 +131,7 @@ impl State {
                     (a, b)
                 };
 
-                if *f_idx == 0 && ret.1.left() == ret.0.left() && ctx.0.active_regions.len() > 0 {
+                if *f_idx == 0 && ret.1.begin() == ret.0.begin() && ctx.0.active_regions.len() > 0 {
                     *b_idx = Some(0);
                 } else {
                     *h_idx += 1;
@@ -240,7 +240,7 @@ where
                         self.context_b.active_regions.data.clear();
                     }
                     std::cmp::Ordering::Equal => {
-                        break (peek_a.map(|x| x.left()), peek_b.map(|x| x.left()));
+                        break (peek_a.map(|x| x.begin()), peek_b.map(|x| x.begin()));
                     }
                 }
             };

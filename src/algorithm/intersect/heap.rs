@@ -16,15 +16,15 @@ impl<T: WithRegion> Default for RegionHeap<T> {
 impl<T: WithRegion> RegionHeap<T> {
     fn adjust_down(&mut self, mut node: usize) {
         let len = self.data.len();
-        let node_key = self.data[node].right();
+        let node_key = self.data[node].end();
         while node < len {
             let mut candidate = node;
             let mut candidate_key = node_key;
             for child_id in 0..2 {
                 let child_node = child_id + 1 + node * 2;
                 if let Some(child_data) = self.data.get(child_node) {
-                    if candidate_key > child_data.right() {
-                        candidate_key = child_data.right();
+                    if candidate_key > child_data.end() {
+                        candidate_key = child_data.end();
                         candidate = child_node;
                     }
                 }
@@ -39,8 +39,8 @@ impl<T: WithRegion> RegionHeap<T> {
     }
 
     fn adjust_up(&mut self, mut node: usize) {
-        let node_key = self.data[node].right();
-        while node > 0 && self.data[node / 2].right() > node_key {
+        let node_key = self.data[node].end();
+        while node > 0 && self.data[node / 2].end() > node_key {
             self.data.swap(node / 2, node);
             node /= 2;
         }

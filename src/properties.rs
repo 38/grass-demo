@@ -9,8 +9,8 @@ pub trait Serializable {
 }
 
 pub trait WithRegion {
-    fn left(&self) -> u32;
-    fn right(&self) -> u32;
+    fn begin(&self) -> u32;
+    fn end(&self) -> u32;
 
     fn chrom(&self) -> &str;
 
@@ -21,33 +21,33 @@ pub trait WithRegion {
             return false;
         }
 
-        !(a.right() <= b.left() || b.right() <= a.left())
+        !(a.end() <= b.begin() || b.end() <= a.begin())
     }
 
     #[inline(always)]
     fn empty(&self) -> bool {
-        self.right() <= self.left()
+        self.end() <= self.begin()
     }
     #[inline(always)]
     fn length(&self) -> u32 {
-        self.right().max(self.left()) - self.left()
+        self.end().max(self.begin()) - self.begin()
     }
 }
 
 impl<'a, 'b, A: WithRegion, B: WithRegion> WithRegion for (A, B) {
     #[inline(always)]
-    fn left(&self) -> u32 {
+    fn begin(&self) -> u32 {
         if self.0.overlaps(&self.1) {
-            self.0.left().max(self.1.left())
+            self.0.begin().max(self.1.begin())
         } else {
             0
         }
     }
 
     #[inline(always)]
-    fn right(&self) -> u32 {
+    fn end(&self) -> u32 {
         if self.0.overlaps(&self.1) {
-            self.0.right().min(self.1.right())
+            self.0.end().min(self.1.end())
         } else {
             0
         }
