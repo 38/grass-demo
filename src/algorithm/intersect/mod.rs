@@ -11,8 +11,8 @@ where
     fn sorted_intersect<U: WithRegion + Clone, Other: Iterator<Item = U> + Sorted>(
         self,
         other: Other,
-    ) -> IntersectIter<Self, Other> {
-        IntersectIter {
+    ) -> SortedIntersectIter<Self, Other> {
+        SortedIntersectIter {
             context_a: Context::from_iter(self),
             context_b: Context::from_iter(other),
             state: State::FrontierA(0, 0, None),
@@ -176,7 +176,7 @@ impl State {
     }
 }
 
-pub struct IntersectIter<IA: Iterator + Sorted, IB: Iterator + Sorted>
+pub struct SortedIntersectIter<IA: Iterator + Sorted, IB: Iterator + Sorted>
 where
     IA::Item: WithRegion + Clone,
     IB::Item: WithRegion + Clone,
@@ -186,7 +186,7 @@ where
     state: State,
 }
 
-impl<IA, IB> Sorted for IntersectIter<IA, IB>
+impl<IA, IB> Sorted for SortedIntersectIter<IA, IB>
 where
     IA: Iterator + Sorted,
     IB: Iterator + Sorted,
@@ -195,7 +195,7 @@ where
 {
 }
 
-impl<IA, IB> Iterator for IntersectIter<IA, IB>
+impl<IA, IB> Iterator for SortedIntersectIter<IA, IB>
 where
     IA: Iterator + Sorted,
     IB: Iterator + Sorted,
