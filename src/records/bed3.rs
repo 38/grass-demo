@@ -1,17 +1,21 @@
 use crate::properties::{Parsable, Serializable, WithRegion};
+use crate::chrom::{Chrom, ChromList, ChromListRef};
 use std::io::{Write, Result};
 
 #[derive(Clone)]
-pub struct Bed3<T: AsRef<str>> {
+pub struct Bed3<T: Chrom> {
     pub begin: u32,
     pub end: u32,
     pub chrom: T,
 }
-
-impl<T: AsRef<str>> Bed3<T> {
-    #[allow(dead_code)]
-    pub fn to_borrowed(&self) -> Bed3<&str> {
-        Bed3::new(self)
+impl <T: Chrom + Into<String>> Bed3<T> {
+    pub fn with_chrom_list(self, chrom_list: &ChromList) -> Bed3<ChromListRef> {
+        let chrom = chrom_list.query(self.chrom.into());
+        Bed3 {
+            begin: self.begin,
+            end: self.end,
+            chrom
+        }
     }
 }
 
@@ -29,12 +33,22 @@ impl<'a> Bed3<&'a str> {
 impl Parsable for Bed3<String> {
     fn parse<'a, T: Iterator<Item = &'a str>>(tokens: &mut T) -> Option<Self> {
         Some(Self {
-            chrom: tokens.next()?.to_string(),
+            chrom: tokens.next()?.to_owned(),
             begin: tokens.next()?.parse().ok()?,
             end: tokens.next()?.parse().ok()?,
         })
     }
 }
+
+/*impl <'a> Parsable<'a> for Bed3<&'a str> {
+    fn parse<T: Iterator<Item = &'a str>>(tokens: &mut T) -> Option<Self> {
+        Some(Self {
+            chrom: tokens.next()?,
+            begin: tokens.next()?.parse().ok()?,
+            end: tokens.next()?.parse().ok()?,
+        })
+    }
+}*/
 
 fn write_number<W: Write>(mut fp: W, mut n: u32) -> Result<()> {
     if n == 0 {
@@ -59,7 +73,7 @@ fn write_number<W: Write>(mut fp: W, mut n: u32) -> Result<()> {
     }
 }
 
-impl<T: AsRef<str>> Serializable for Bed3<T> {
+impl<T: Chrom> Serializable for Bed3<T> {
     fn dump<W: Write>(&self, mut fp: W) -> Result<()> {
         fp.write_all(self.chrom().as_bytes())?;
         fp.write(b"\t")?;
@@ -69,7 +83,7 @@ impl<T: AsRef<str>> Serializable for Bed3<T> {
     }
 }
 
-impl<T: AsRef<str>> WithRegion for Bed3<T> {
+impl<T: Chrom> WithRegion for Bed3<T> {
     fn begin(&self) -> u32 {
         self.begin
     }
@@ -79,7 +93,7 @@ impl<T: AsRef<str>> WithRegion for Bed3<T> {
     }
 
     fn chrom(&self) -> &str {
-        self.chrom.as_ref()
+        self.chrom.name()
     }
 }
 

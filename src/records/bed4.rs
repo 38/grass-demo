@@ -1,15 +1,17 @@
 use super::Bed3;
 use crate::properties::{WithRegion, WithName, Parsable, Serializable};
+use crate::chrom::{Chrom, ChromList, ChromListRef};
 
+use std::rc::Rc;
 use std::io::{Write, Result};
 
 #[derive(Clone)]
-pub struct Bed4<T: AsRef<str>> {
+pub struct Bed4<T: Chrom> {
     core: Bed3<T>,
-    name: T,
+    name: Rc<String>,
 }
 
-impl<T: AsRef<str>> WithRegion for Bed4<T> {
+impl<T: Chrom> WithRegion for Bed4<T> {
     fn begin(&self) -> u32 {
         self.core.begin()
     }
@@ -23,7 +25,7 @@ impl<T: AsRef<str>> WithRegion for Bed4<T> {
     }
 }
 
-impl<T: AsRef<str>> WithName for Bed4<T> {
+impl<T: Chrom> WithName for Bed4<T> {
     fn name(&self) -> &str {
         self.name.as_ref()
     }
@@ -34,12 +36,12 @@ impl Parsable for Bed4<String> {
         let core = Bed3::parse(tokens)?;
         Some(Self {
             core,
-            name: tokens.next()?.to_string(),
+            name: Rc::new(tokens.next()?.to_string()),
         })
     }
 }
 
-impl<T: AsRef<str>> Serializable for Bed4<T> {
+impl<T: Chrom> Serializable for Bed4<T> {
     fn dump<W: Write>(&self, mut fp: W) -> Result<()> {
         self.core.dump(&mut fp)?;
         fp.write(b"\t")?;
@@ -47,12 +49,11 @@ impl<T: AsRef<str>> Serializable for Bed4<T> {
     }
 }
 
-impl<'a> Bed4<&'a str> {
-    #[allow(dead_code)]
-    pub fn with_name<T: WithRegion + 'a>(region: &'a T, name: &'a str) -> Self {
-        Self {
-            core: Bed3::new(region),
-            name,
+impl <T: Chrom + Into<String>> Bed4<T> {
+    pub fn with_chrom_list(self, chrom_list: &ChromList) -> Bed4<ChromListRef> {
+        Bed4 {
+            core: self.core.with_chrom_list(chrom_list),
+            name: self.name
         }
     }
 }

@@ -60,9 +60,9 @@ where
         self.peek_buffer.as_ref()
     }
 
-    fn remove_inactive_regions(&mut self, active_limit: u32) {
+    fn remove_inactive_regions(&mut self, chrom: &str, active_limit: u32) {
         while let Some(top) = self.active_regions.peek() {
-            if top.end() <= active_limit {
+            if top.chrom() < chrom || top.end() <= active_limit {
                 self.active_regions.pop();
             } else {
                 break;
@@ -82,7 +82,7 @@ where
                 break;
             }
         }
-        self.remove_inactive_regions(new_frontier);
+        self.remove_inactive_regions(&chrom, new_frontier);
         Some(new_frontier)
     }
 
@@ -101,7 +101,7 @@ where
                 break;
             }
         }
-        self.remove_inactive_regions(active_limit);
+        self.remove_inactive_regions(chrom, active_limit);
     }
 }
 
