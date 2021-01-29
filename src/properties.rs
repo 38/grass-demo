@@ -34,30 +34,29 @@ pub trait WithRegion {
     }
 }
 
-impl <'a, 'b, A: WithRegion, B: WithRegion> WithRegion for (A, B) {
-   #[inline(always)]
-   fn left(&self) -> u32 {
-       if self.0.overlaps(&self.1) {
-           self.0.left().max(self.1.left())
-       } else {
-           0
-       }
-   } 
-   
-   #[inline(always)]
-   fn right(&self) -> u32 {
-       if self.0.overlaps(&self.1) {
-           self.0.right().min(self.1.right())
-       } else {
-           0
-       }
-   } 
+impl<'a, 'b, A: WithRegion, B: WithRegion> WithRegion for (A, B) {
+    #[inline(always)]
+    fn left(&self) -> u32 {
+        if self.0.overlaps(&self.1) {
+            self.0.left().max(self.1.left())
+        } else {
+            0
+        }
+    }
 
-   #[inline(always)]
-   fn chrom(&self) -> &str {
-       self.0.chrom()
-   }
+    #[inline(always)]
+    fn right(&self) -> u32 {
+        if self.0.overlaps(&self.1) {
+            self.0.right().min(self.1.right())
+        } else {
+            0
+        }
+    }
 
+    #[inline(always)]
+    fn chrom(&self) -> &str {
+        self.0.chrom()
+    }
 }
 pub trait WithName {
     fn name(&self) -> &str;

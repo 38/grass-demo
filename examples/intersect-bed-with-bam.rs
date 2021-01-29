@@ -1,13 +1,12 @@
 #[cfg(feature = "d4-hts")]
 fn main() -> std::io::Result<()> {
-
-    use std::io::{BufRead, BufReader, Result, BufWriter, Write};
-    use std::fs::File;
     use std::env::args;
+    use std::fs::File;
+    use std::io::{BufRead, BufReader, BufWriter, Result, Write};
 
-    use gql::records::Bed3;
-    use gql::properties::{Parsable, Serializable};
     use gql::algorithm::Intersect;
+    use gql::properties::{Parsable, Serializable};
+    use gql::records::Bed3;
 
     fn parse_file<T: Parsable>(path: &str) -> Result<impl Iterator<Item = Option<T>>> {
         let file = BufReader::new(File::open(path)?);

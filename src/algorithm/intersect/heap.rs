@@ -5,15 +5,15 @@ pub(super) struct RegionHeap<T: WithRegion> {
     pub(super) data: Vec<T>,
 }
 
-impl <T: WithRegion> Default  for RegionHeap<T> {
+impl<T: WithRegion> Default for RegionHeap<T> {
     fn default() -> Self {
         Self {
-            data: Default::default()
+            data: Default::default(),
         }
     }
 }
 
-impl <T: WithRegion> RegionHeap<T> {
+impl<T: WithRegion> RegionHeap<T> {
     fn adjust_down(&mut self, mut node: usize) {
         let len = self.data.len();
         let node_key = self.data[node].right();
@@ -59,7 +59,7 @@ impl <T: WithRegion> RegionHeap<T> {
         Some(ret)
     }
 
-    pub fn push(&mut self, value:T) {
+    pub fn push(&mut self, value: T) {
         self.data.push(value);
         self.adjust_up(self.data.len() - 1);
     }
@@ -72,4 +72,3 @@ impl <T: WithRegion> RegionHeap<T> {
         self.data.len()
     }
 }
-

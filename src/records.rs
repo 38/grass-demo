@@ -5,8 +5,8 @@ use std::io::{Result, Write};
 mod bamsupport {
     use super::*;
 
-    use std::rc::Rc;
     use d4_hts::{Alignment, AlignmentReader};
+    use std::rc::Rc;
 
     pub use d4_hts::BamFile;
 
@@ -52,14 +52,14 @@ pub struct Bed3<T: AsRef<str>> {
     pub chrom: T,
 }
 
-impl <T: AsRef<str>> Bed3<T> {
+impl<T: AsRef<str>> Bed3<T> {
     #[allow(dead_code)]
     pub fn to_borrowed(&self) -> Bed3<&str> {
         Bed3::new(self)
     }
 }
 
-impl <'a> Bed3<&'a str> {
+impl<'a> Bed3<&'a str> {
     #[allow(dead_code)]
     pub fn new<T: WithRegion>(region: &'a T) -> Self {
         Self {
@@ -103,7 +103,7 @@ fn write_number<W: Write>(mut fp: W, mut n: u32) -> Result<()> {
     }
 }
 
-impl <T: AsRef<str>> Serializable for Bed3<T> {
+impl<T: AsRef<str>> Serializable for Bed3<T> {
     fn dump<W: Write>(&self, mut fp: W) -> Result<()> {
         fp.write_all(self.chrom().as_bytes())?;
         fp.write(b"\t")?;
@@ -113,7 +113,7 @@ impl <T: AsRef<str>> Serializable for Bed3<T> {
     }
 }
 
-impl <T: AsRef<str>> WithRegion for Bed3<T> {
+impl<T: AsRef<str>> WithRegion for Bed3<T> {
     fn left(&self) -> u32 {
         self.left
     }
@@ -133,7 +133,7 @@ pub struct Bed4<T: AsRef<str>> {
     name: T,
 }
 
-impl <T: AsRef<str>> WithRegion for Bed4<T> {
+impl<T: AsRef<str>> WithRegion for Bed4<T> {
     fn left(&self) -> u32 {
         self.core.left()
     }
@@ -147,7 +147,7 @@ impl <T: AsRef<str>> WithRegion for Bed4<T> {
     }
 }
 
-impl <T:AsRef<str>> WithName for Bed4<T> {
+impl<T: AsRef<str>> WithName for Bed4<T> {
     fn name(&self) -> &str {
         self.name.as_ref()
     }
@@ -163,7 +163,7 @@ impl Parsable for Bed4<String> {
     }
 }
 
-impl <T: AsRef<str>> Serializable for Bed4<T> {
+impl<T: AsRef<str>> Serializable for Bed4<T> {
     fn dump<W: Write>(&self, mut fp: W) -> Result<()> {
         self.core.dump(&mut fp)?;
         fp.write(b"\t")?;
@@ -171,7 +171,7 @@ impl <T: AsRef<str>> Serializable for Bed4<T> {
     }
 }
 
-impl <'a> Bed4<&'a str> {
+impl<'a> Bed4<&'a str> {
     #[allow(dead_code)]
     pub fn with_name<T: WithRegion + 'a>(region: &'a T, name: &'a str) -> Self {
         Self {

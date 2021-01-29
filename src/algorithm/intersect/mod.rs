@@ -1,10 +1,17 @@
 mod heap;
 
 use crate::properties::WithRegion;
+use crate::algorithm::markers::Sorted;
 use heap::RegionHeap;
 
-pub trait Intersect : Iterator + Sized where Self::Item : WithRegion + Clone {
-    fn intersect<U: WithRegion + Clone, Other: Iterator<Item = U>>(self, other: Other) -> IntersectIter<Self, Other> {
+pub trait SortedIntersect: Iterator + Sorted + Sized
+where
+    Self::Item: WithRegion + Clone,
+{
+    fn sorted_intersect<U: WithRegion + Clone, Other: Iterator<Item = U> + Sorted>(
+        self,
+        other: Other,
+    ) -> IntersectIter<Self, Other> {
         IntersectIter {
             context_a: Context::from_iter(self),
             context_b: Context::from_iter(other),
@@ -13,23 +20,29 @@ pub trait Intersect : Iterator + Sized where Self::Item : WithRegion + Clone {
     }
 }
 
-impl <I : Iterator> Intersect for I where I::Item : WithRegion + Clone {}
+impl<I: Iterator + Sorted> SortedIntersect for I where I::Item: WithRegion + Clone {}
 
-struct Context<I: Iterator> where I::Item : WithRegion + Clone {
+struct Context<I: Iterator + Sorted>
+where
+    I::Item: WithRegion + Clone,
+{
     iter: I,
     peek_buffer: Option<I::Item>,
     frontier: Vec<I::Item>,
     active_regions: RegionHeap<I::Item>,
 }
 
-impl <I:Iterator> Context<I> where I::Item : WithRegion + Clone {
+impl<I: Iterator + Sorted> Context<I>
+where
+    I::Item: WithRegion + Clone,
+{
     fn from_iter(mut iter: I) -> Self {
         let peek_buffer = iter.next();
-        Self{
+        Self {
             iter,
             peek_buffer,
             frontier: Vec::new(),
-            active_regions: Default::default()
+            active_regions: Default::default(),
         }
     }
 
@@ -99,7 +112,15 @@ pub enum State {
 }
 
 impl State {
-    fn next<A: WithRegion + Clone, B: WithRegion + Clone, IA: Iterator<Item = A>, IB: Iterator<Item = B>>(&mut self, ctx: (&mut Context<IA>, &mut Context<IB>)) -> Option<(A, B)> {
+    fn next<
+        A: WithRegion + Clone,
+        B: WithRegion + Clone,
+        IA: Iterator<Item = A> + Sorted,
+        IB: Iterator<Item = B> + Sorted,
+    >(
+        &mut self,
+        ctx: (&mut Context<IA>, &mut Context<IB>),
+    ) -> Option<(A, B)> {
         match self {
             Self::FrontierA(f_idx, h_idx, b_idx) if b_idx.is_none() => {
                 let ret = if *f_idx >= ctx.0.frontier.len() || ctx.1.active_regions.len() == 0 {
@@ -107,7 +128,7 @@ impl State {
                 } else {
                     let a = ctx.0.frontier[*f_idx].clone();
                     let b = ctx.1.active_regions.as_slice()[*h_idx].clone();
-                    (a,b)
+                    (a, b)
                 };
 
                 if *f_idx == 0 && ret.1.left() == ret.0.left() && ctx.0.active_regions.len() > 0 {
@@ -147,7 +168,7 @@ impl State {
                         *h_idx = h;
                         *b_idx = b;
                     }
-                    _ => unreachable!()
+                    _ => unreachable!(),
                 }
                 ret
             }
@@ -155,22 +176,31 @@ impl State {
     }
 }
 
-pub struct IntersectIter<IA : Iterator, IB: Iterator>
+pub struct IntersectIter<IA: Iterator + Sorted, IB: Iterator + Sorted>
 where
-    IA::Item : WithRegion + Clone,
-    IB::Item : WithRegion + Clone,
+    IA::Item: WithRegion + Clone,
+    IB::Item: WithRegion + Clone,
 {
     context_a: Context<IA>,
     context_b: Context<IB>,
     state: State,
 }
 
-impl <IA, IB> Iterator for IntersectIter<IA, IB>
+impl<IA, IB> Sorted for IntersectIter<IA, IB>
 where
-    IA: Iterator,
-    IB: Iterator,
-    IA::Item : WithRegion + Clone,
-    IB::Item : WithRegion + Clone,
+    IA: Iterator + Sorted,
+    IB: Iterator + Sorted,
+    IA::Item: WithRegion + Clone,
+    IB::Item: WithRegion + Clone,
+{
+}
+
+impl<IA, IB> Iterator for IntersectIter<IA, IB>
+where
+    IA: Iterator + Sorted,
+    IB: Iterator + Sorted,
+    IA::Item: WithRegion + Clone,
+    IB::Item: WithRegion + Clone,
 {
     type Item = (IA::Item, IB::Item);
     fn next(&mut self) -> Option<Self::Item> {
@@ -198,12 +228,14 @@ where
 
                 match chrom_cmp {
                     std::cmp::Ordering::Less => {
-                        self.context_a.skip_util_chrom(peek_b.as_ref().unwrap().chrom());
+                        self.context_a
+                            .skip_util_chrom(peek_b.as_ref().unwrap().chrom());
                         self.context_a.frontier.clear();
                         self.context_a.active_regions.data.clear();
                     }
                     std::cmp::Ordering::Greater => {
-                        self.context_b.skip_util_chrom(peek_a.as_ref().unwrap().chrom());
+                        self.context_b
+                            .skip_util_chrom(peek_a.as_ref().unwrap().chrom());
                         self.context_b.frontier.clear();
                         self.context_b.active_regions.data.clear();
                     }
@@ -213,15 +245,19 @@ where
                 }
             };
 
-            self.state = if frontier_a.unwrap_or(std::u32::MAX) <= frontier_b.unwrap_or(std::u32::MAX) {
-                let frontier = self.context_a.push_frontier()?;
-                self.context_b.ingest_active_regions(self.context_a.frontier[0].chrom(), frontier);
-                State::FrontierA(0, 0, None)
-            } else {
-                let frontier = self.context_b.push_frontier()?;
-                self.context_a.ingest_active_regions(self.context_b.frontier[0].chrom(), frontier);
-                State::FrontierB(0, 0, None)
-            };
+            self.state =
+                if frontier_a.unwrap_or(std::u32::MAX) <= frontier_b.unwrap_or(std::u32::MAX) {
+                    let frontier = self.context_a.push_frontier()?;
+                    self.context_b
+                        .ingest_active_regions(self.context_a.frontier[0].chrom(), frontier);
+                    State::FrontierA(0, 0, None)
+                } else {
+                    let frontier = self.context_b.push_frontier()?;
+                    self.context_a
+                        .ingest_active_regions(self.context_b.frontier[0].chrom(), frontier);
+                    State::FrontierB(0, 0, None)
+                };
         }
     }
 }
+
