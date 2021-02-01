@@ -41,3 +41,9 @@ where
 impl <T: Iterator> Sorted for AssumingSortedIter<T> 
 where T::Item: WithRegion
 {}
+
+impl <T: Iterator + Sorted, P> Sorted for std::iter::Filter<T, P> 
+where 
+    T::Item : WithRegion,
+    P: Fn(&T::Item) -> bool,
+{}
