@@ -30,14 +30,10 @@ fn main() -> Result<()> {
 
     let mut out_file = BufWriter::new(File::create(&args[2])?);
 
-    for pair in bed3_file.sorted_left_outer_intersect(bed4_file)
+    for pair in bed3_file.sorted_intersect(bed4_file)
     {
         let result = Bed3::new(&pair);
         result.dump(&mut out_file)?;
-        out_file.write_all(b"\t")?;
-        Bed3::new(&pair.0).dump(&mut out_file)?;
-        out_file.write_all(b"\t")?;
-        Bed3::new(&pair.1).dump(&mut out_file)?;
         out_file.write_all(b"\n")?;
     }
 
