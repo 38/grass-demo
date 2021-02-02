@@ -1,2 +1,2 @@
 mod sorted;
-pub use sorted::{Sorted, AssumeSorted};
+pub use sorted::{AssumeSorted, Sorted};

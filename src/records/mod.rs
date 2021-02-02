@@ -1,9 +1,8 @@
-
 #[cfg(feature = "d4-hts")]
 mod bam;
 
 #[cfg(feature = "d4-hts")]
-pub use bam::{BamFile, BAMRecord};
+pub use bam::{BAMRecord, BamFile};
 
 mod bed3;
 pub use bed3::Bed3;

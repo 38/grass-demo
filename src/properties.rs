@@ -34,7 +34,31 @@ pub trait WithRegion {
     }
 }
 
-impl<'a, 'b, A: WithRegion, B: WithRegion> WithRegion for (A, B) {
+impl<'a, T: WithRegion> WithRegion for &'a T {
+    fn begin(&self) -> u32 {
+        T::begin(*self)
+    }
+    fn end(&self) -> u32 {
+        T::end(*self)
+    }
+    fn chrom(&self) -> &str {
+        T::chrom(*self)
+    }
+}
+
+impl<T: WithRegion> WithRegion for Option<T> {
+    fn begin(&self) -> u32 {
+        self.as_ref().map_or(0, |x| x.begin())
+    }
+    fn end(&self) -> u32 {
+        self.as_ref().map_or(0, |x| x.end())
+    }
+    fn chrom(&self) -> &str {
+        self.as_ref().map_or(".", |x| x.chrom())
+    }
+}
+
+impl<A: WithRegion, B: WithRegion> WithRegion for (A, B) {
     #[inline(always)]
     fn begin(&self) -> u32 {
         if self.0.overlaps(&self.1) {
@@ -58,6 +82,7 @@ impl<'a, 'b, A: WithRegion, B: WithRegion> WithRegion for (A, B) {
         self.0.chrom()
     }
 }
+
 pub trait WithName {
     fn name(&self) -> &str;
 }

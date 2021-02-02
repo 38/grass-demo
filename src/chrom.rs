@@ -1,7 +1,7 @@
-use std::cmp::{PartialOrd, Ordering};
 use std::cell::RefCell;
+use std::cmp::{Ordering, PartialOrd};
 
-pub trait Chrom : PartialOrd {
+pub trait Chrom: PartialOrd {
     fn name(&self) -> &str;
 }
 
@@ -9,7 +9,7 @@ pub struct ChromList {
     list: RefCell<Vec<Box<str>>>,
 }
 
-impl <T: AsRef<str> + PartialOrd> Chrom for T {
+impl<T: AsRef<str> + PartialOrd> Chrom for T {
     fn name(&self) -> &str {
         self.as_ref()
     }
@@ -20,14 +20,14 @@ pub struct ChromListRef<'a> {
     chrom_list: &'a ChromList,
     chrom_id: usize,
 }
-impl <'a> PartialEq for ChromListRef<'a> {
+impl<'a> PartialEq for ChromListRef<'a> {
     fn eq(&self, other: &Self) -> bool {
-        self.chrom_list as *const _ == other.chrom_list as *const _ &&
-            self.chrom_id == other.chrom_id
+        self.chrom_list as *const _ == other.chrom_list as *const _
+            && self.chrom_id == other.chrom_id
     }
 }
 
-impl <'a> PartialOrd for ChromListRef<'a> {
+impl<'a> PartialOrd for ChromListRef<'a> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         if self.chrom_list as *const _ != other.chrom_list as *const _ {
             return None;
@@ -36,13 +36,13 @@ impl <'a> PartialOrd for ChromListRef<'a> {
     }
 }
 
-impl <'a> Chrom for ChromListRef<'a> {
+impl<'a> Chrom for ChromListRef<'a> {
     fn name(&self) -> &str {
         let list = self.chrom_list.list.borrow();
         // Justify: This is safe, as long as the ChromListRef cannot live longer than its backed
         // ChromList, thus the boxed strs won't get dropped, though the list might be resized
         unsafe {
-            let data:&str = &list.get_unchecked(self.chrom_id);
+            let data: &str = &list.get_unchecked(self.chrom_id);
             std::mem::transmute(data)
         }
     }
@@ -51,7 +51,7 @@ impl <'a> Chrom for ChromListRef<'a> {
 impl ChromList {
     pub fn new() -> Self {
         Self {
-            list: RefCell::new(Vec::new())
+            list: RefCell::new(Vec::new()),
         }
     }
 
@@ -63,12 +63,15 @@ impl ChromList {
                 idx = Some(list.len() - 1);
             }
         }
-        idx = idx.or_else(|| list.iter().enumerate().find_map(|(idx,what)| if what.as_ref() == name.as_ref() {
-                Some(idx)
-            } else {
-                None
-            }
-        ));
+        idx = idx.or_else(|| {
+            list.iter().enumerate().find_map(|(idx, what)| {
+                if what.as_ref() == name.as_ref() {
+                    Some(idx)
+                } else {
+                    None
+                }
+            })
+        });
         drop(list);
 
         if idx.is_none() {

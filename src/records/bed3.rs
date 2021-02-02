@@ -1,6 +1,6 @@
-use crate::properties::{Parsable, Serializable, WithRegion};
 use crate::chrom::{Chrom, ChromList, ChromListRef};
-use std::io::{Write, Result};
+use crate::properties::{Parsable, Serializable, WithRegion};
+use std::io::{Result, Write};
 
 #[derive(Clone)]
 pub struct Bed3<T: Chrom> {
@@ -8,13 +8,13 @@ pub struct Bed3<T: Chrom> {
     pub end: u32,
     pub chrom: T,
 }
-impl <T: Chrom + Into<String>> Bed3<T> {
+impl<T: Chrom + Into<String>> Bed3<T> {
     pub fn with_chrom_list(self, chrom_list: &ChromList) -> Bed3<ChromListRef> {
         let chrom = chrom_list.query(self.chrom.into());
         Bed3 {
             begin: self.begin,
             end: self.end,
-            chrom
+            chrom,
         }
     }
 }
@@ -96,4 +96,3 @@ impl<T: Chrom> WithRegion for Bed3<T> {
         self.chrom.name()
     }
 }
-

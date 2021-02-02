@@ -1,9 +1,9 @@
 use super::Bed3;
-use crate::properties::{WithRegion, WithName, Parsable, Serializable};
 use crate::chrom::{Chrom, ChromList, ChromListRef};
+use crate::properties::{Parsable, Serializable, WithName, WithRegion};
 
+use std::io::{Result, Write};
 use std::rc::Rc;
-use std::io::{Write, Result};
 
 #[derive(Clone)]
 pub struct Bed4<T: Chrom> {
@@ -49,11 +49,11 @@ impl<T: Chrom> Serializable for Bed4<T> {
     }
 }
 
-impl <T: Chrom + Into<String>> Bed4<T> {
+impl<T: Chrom + Into<String>> Bed4<T> {
     pub fn with_chrom_list(self, chrom_list: &ChromList) -> Bed4<ChromListRef> {
         Bed4 {
             core: self.core.with_chrom_list(chrom_list),
-            name: self.name
+            name: self.name,
         }
     }
 }
