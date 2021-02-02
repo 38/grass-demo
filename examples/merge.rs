@@ -7,6 +7,8 @@ use gql::algorithm::Components;
 use gql::properties::{Parsable, Serializable};
 use gql::records::Bed3;
 
+use itertools::Itertools;
+
 fn parse_file<T: Parsable>(path: &str) -> Result<impl Iterator<Item = Option<T>>> {
     let file = BufReader::new(File::open(path)?);
     Ok(file.lines().map(|line| {
@@ -26,26 +28,21 @@ fn main() -> Result<()> {
     
     let mut out_file = BufWriter::new(File::create(&args[1])?);
 
-    let mut last_begin = None;
+    let mut id = 0;
 
-    for comp in bed3_file.components() {
-        if let Some((ref chr, pos)) = last_begin {
-            if comp.depth == 0 {
-               let result = Bed3 {
-                   chrom: chr,
-                   begin: pos,
-                   end: comp.position().1
-               };
-               result.dump(&mut out_file)?;
-               out_file.write_all(b"\n")?;
-               last_begin = None;
-            }
-        } else {
-            if comp.depth > 0 {
-                let (chr, pos) = comp.position();
-                last_begin = Some((chr.to_owned(), pos));
-            }
-        }
+    for (first, last) in bed3_file.components()
+        .group_by(move |x| if x.depth == 0 { id += 1; id - 1 } else { id })
+        .into_iter()
+        .map(|(_, mut overlaps)| (overlaps.next().unwrap(), overlaps.last().unwrap())) {
+        let result = Bed3 {
+            chrom: first.position().0,
+            begin: first.position().1,
+            end: last.position().1,
+        };
+        result.dump(&mut out_file)?;
+        out_file.write_all(b"\n")?;
     }
+
+
     Ok(())
 }

@@ -9,6 +9,9 @@ edition = "2018"
 [dependencies]
 d4-hts = {version = "0.1.16", optional=true}
 
+[dev-dependencies]
+itertools = "0.10.0"
+
 [lib]
 name = "gql"
 
