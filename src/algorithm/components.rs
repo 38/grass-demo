@@ -1,13 +1,29 @@
 use std::cmp::{Ordering, Reverse};
 use std::collections::BinaryHeap;
 use std::iter::Enumerate;
+use std::fmt::{Debug, Result, Formatter};
 
 use crate::properties::WithRegion;
 
 pub struct Point<T: WithRegion> {
     pub is_open: bool,
     pub index: usize,
+    pub depth: usize,
     pub value: T,
+}
+
+impl <T: WithRegion> Debug for Point<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+       if self.is_open {
+           write!(f, "Open(")?;
+       } else {
+           write!(f, "Close(")?;
+       }
+
+       let (chrom, pos) = self.position();
+
+       write!(f, "{}, {}, {})", chrom, pos, self.depth)
+    }
 }
 
 impl <T: WithRegion> Point<T> {
@@ -85,22 +101,34 @@ where
         if let Some((index, peek_buffer)) = self.peek_buffer.as_ref() {
             let index = *index;
             if self.heap.peek().map_or(false, |x| x.0.position() < (peek_buffer.chrom(), peek_buffer.begin())) {
-                return self.heap.pop().map(|Reverse(x)| x);
+                let depth = self.heap.len();
+                return self.heap.pop().map(|Reverse(mut x)| {
+                    x.depth = depth - 1;
+                    x
+                });
             }
+            let depth = self.heap.len() + 1;
+
             self.heap.push(Reverse(Point {
                 index,
+                depth: 0,
                 value: peek_buffer.clone(),
                 is_open: false,
             }));
             let ret = Some(Point {
                 index,
+                depth,
                 is_open: true,
                 value: peek_buffer.clone(),
             });
             self.peek_buffer = self.iter.next();
             ret
         } else {
-            self.heap.pop().map(|Reverse(x)| x)
+            let depth = self.heap.len();
+            self.heap.pop().map(|Reverse(mut x)| {
+                x.depth = depth - 1;
+                x
+            })
         }
     }
 }

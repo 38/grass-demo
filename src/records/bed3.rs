@@ -20,7 +20,6 @@ impl<T: Chrom + Into<String>> Bed3<T> {
 }
 
 impl<'a> Bed3<&'a str> {
-    #[allow(dead_code)]
     pub fn new<T: WithRegion>(region: &'a T) -> Self {
         Self {
             begin: region.begin(),
