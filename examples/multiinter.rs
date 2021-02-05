@@ -41,6 +41,14 @@ fn main() -> Result<()> {
         let (chr, pos) = comp.position();
         (chr.to_string(), pos)
     }).into_iter() {
+        
+        if let Some((left_chr, left_pos)) = last_pos {
+            //TODO: Rust's println macro is very slow
+            if left_chr == chr && active_count > 0 {
+                println!("{}\t{}\t{}\t{:?}", chr, left_pos, pos, current_depth);
+            }
+        }
+
         for (comp, file_idx) in group {
             match (current_depth[file_idx], comp.depth) {
                 (0, new) if new > 0 => active_count += 1,
@@ -49,12 +57,7 @@ fn main() -> Result<()> {
             }
             current_depth[file_idx] = comp.depth;
         }
-        if let Some((left_chr, left_pos)) = last_pos {
-            //TODO: Rust's println macro is very slow
-            if left_chr == chr && active_count > 0 {
-                println!("{}\t{}\t{}\t{:?}", chr, left_pos, pos, current_depth);
-            }
-        }
+
         last_pos = Some((chr, pos));
     }
     Ok(())
