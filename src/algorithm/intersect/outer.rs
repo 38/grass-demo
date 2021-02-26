@@ -1,30 +1,32 @@
-use crate::properties::WithRegion;
+use crate::{ChromName, properties::WithRegion};
 use super::heap::RegionHeap;
 use super::Sorted;
 
-pub struct LeftOuterJoinIter<IA, IB>
+pub struct LeftOuterJoinIter<C, IA, IB>
 where
+    C : ChromName,
     IA: Iterator + Sorted,
     IB: Iterator + Sorted,
-    IA::Item: WithRegion + Clone,
-    IB::Item: WithRegion + Clone
+    IA::Item: WithRegion<C> + Clone,
+    IB::Item: WithRegion<C> + Clone
 {
     iter_a: IA,
     iter_b: IB,
-    active_regions: RegionHeap<IB::Item>,
-    current_chrom: String,
+    active_regions: RegionHeap<C, IB::Item>,
+    current_chrom: Option<C>,
     limit: u32,
     current_a: Option<IA::Item>,
     current_b: Option<IB::Item>,
     current_b_idx: usize,
 }
 
-impl <IA, IB> LeftOuterJoinIter<IA, IB>
+impl <C, IA, IB> LeftOuterJoinIter<C, IA, IB>
 where
+    C: ChromName,
     IA: Iterator + Sorted,
     IB: Iterator + Sorted,
-    IA::Item: WithRegion + Clone,
-    IB::Item: WithRegion + Clone
+    IA::Item: WithRegion<C> + Clone,
+    IB::Item: WithRegion<C> + Clone
 {
     pub(super) fn new(iter_a: IA, mut iter_b: IB)  -> Self {
         let current_b = iter_b.next();
@@ -32,7 +34,7 @@ where
             iter_a,
             iter_b,
             active_regions: Default::default(),
-            current_chrom: "".to_string(),
+            current_chrom: None,
             limit: 0,
             current_a: None,
             current_b,
@@ -46,8 +48,8 @@ where
         self.current_a = self.iter_a.next();
         let cur_a = self.current_a.as_ref()?;
 
-        if cur_a.chrom() != self.current_chrom {
-            self.current_chrom = cur_a.chrom().to_owned();
+        if Some(cur_a.chrom()) != self.current_chrom {
+            self.current_chrom = Some(cur_a.chrom());
             self.limit = 0;
             self.active_regions.data.clear();
         }
@@ -55,7 +57,7 @@ where
         self.limit = self.limit.max(cur_a.end());
 
         while let Some(ref b) = self.current_b {
-            if b.chrom() > self.current_chrom.as_ref() || self.limit <= b.end() {
+            if Some(b.chrom()) > self.current_chrom || self.limit <= b.end() {
                 break;
             }
             self.active_regions.push(self.current_b.take().unwrap());
@@ -74,12 +76,13 @@ where
     }
 }
 
-impl <IA, IB> Iterator for LeftOuterJoinIter<IA, IB>
+impl <C, IA, IB> Iterator for LeftOuterJoinIter<C, IA, IB>
 where
+    C: ChromName,
     IA: Iterator + Sorted,
     IB: Iterator + Sorted,
-    IA::Item: WithRegion + Clone,
-    IB::Item: WithRegion + Clone, 
+    IA::Item: WithRegion<C> + Clone,
+    IB::Item: WithRegion<C> + Clone, 
 {
     type Item = (IA::Item, Option<IB::Item>);
 

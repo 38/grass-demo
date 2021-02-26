@@ -1,21 +1,23 @@
-use std::io::{Result, Write};
+use crate::ChromName;
 
-pub trait Parsable: Sized {
+/*
+use std::io::{Result, Write};
+ pub trait Parsable: Sized {
     fn parse<'a, T: Iterator<Item = &'a str>>(token_stream: &mut T) -> Option<Self>;
 }
 
 pub trait Serializable {
     fn dump<W: Write>(&self, fp: W) -> Result<()>;
-}
+}*/
 
-pub trait WithRegion {
+pub trait WithRegion<Chrom: ChromName> {
     fn begin(&self) -> u32;
     fn end(&self) -> u32;
 
-    fn chrom(&self) -> &str;
+    fn chrom(&self) -> Chrom;
 
     #[inline(always)]
-    fn overlaps(&self, b: &impl WithRegion) -> bool {
+    fn overlaps(&self, b: &impl WithRegion<Chrom>) -> bool {
         let a = self;
         if a.chrom() != b.chrom() {
             return false;
@@ -34,31 +36,19 @@ pub trait WithRegion {
     }
 }
 
-impl<'a, T: WithRegion> WithRegion for &'a T {
+impl<'a, Chrom:ChromName, T: WithRegion<Chrom>> WithRegion<Chrom> for &'a T {
     fn begin(&self) -> u32 {
         T::begin(*self)
     }
     fn end(&self) -> u32 {
         T::end(*self)
     }
-    fn chrom(&self) -> &str {
+    fn chrom(&self) -> Chrom {
         T::chrom(*self)
     }
 }
 
-impl<T: WithRegion> WithRegion for Option<T> {
-    fn begin(&self) -> u32 {
-        self.as_ref().map_or(0, |x| x.begin())
-    }
-    fn end(&self) -> u32 {
-        self.as_ref().map_or(0, |x| x.end())
-    }
-    fn chrom(&self) -> &str {
-        self.as_ref().map_or(".", |x| x.chrom())
-    }
-}
-
-impl<A: WithRegion, B: WithRegion> WithRegion for (A, B) {
+impl<Chrom: ChromName, A: WithRegion<Chrom>, B: WithRegion<Chrom>> WithRegion<Chrom> for (A, B) {
     #[inline(always)]
     fn begin(&self) -> u32 {
         if self.0.overlaps(&self.1) {
@@ -78,7 +68,7 @@ impl<A: WithRegion, B: WithRegion> WithRegion for (A, B) {
     }
 
     #[inline(always)]
-    fn chrom(&self) -> &str {
+    fn chrom(&self) -> Chrom {
         self.0.chrom()
     }
 }

@@ -1,20 +1,24 @@
+use std::marker::PhantomData;
+
 use crate::algorithm::Sorted;
+use crate::ChromName;
 use super::heap::RegionHeap;
 use crate::properties::WithRegion;
 
-pub(super) struct Context<I: Iterator + Sorted>
+pub(super) struct Context<C:ChromName, I: Iterator + Sorted>
 where
-    I::Item: WithRegion + Clone,
+    I::Item: WithRegion<C> + Clone,
 {
     iter: I,
     peek_buffer: Option<I::Item>,
     frontier: Vec<I::Item>,
-    active_regions: RegionHeap<I::Item>,
+    active_regions: RegionHeap<C, I::Item>,
+    _p: PhantomData<C>,
 }
 
-impl<I: Iterator + Sorted> Context<I>
+impl<C:ChromName, I: Iterator + Sorted> Context<C, I>
 where
-    I::Item: WithRegion + Clone,
+    I::Item: WithRegion<C> + Clone,
 {
     pub(super) fn from_iter(mut iter: I) -> Self {
         let peek_buffer = iter.next();
@@ -23,12 +27,13 @@ where
             peek_buffer,
             frontier: Vec::new(),
             active_regions: Default::default(),
+            _p: PhantomData,
         }
     }
 
-    fn skip_util_chrom(&mut self, target: &str) {
+    fn skip_util_chrom(&mut self, target: &C) {
         while let Some(head) = self.peek_buffer.as_ref() {
-            if head.chrom() < target {
+            if &head.chrom() < target {
                 self.peek_buffer = self.iter.next();
             } else {
                 break;
@@ -40,9 +45,9 @@ where
         self.peek_buffer.as_ref()
     }
 
-    fn remove_inactive_regions(&mut self, chrom: &str, active_limit: u32) {
+    fn remove_inactive_regions(&mut self, chrom: &C, active_limit: u32) {
         while let Some(top) = self.active_regions.peek() {
-            if top.chrom() < chrom || top.end() <= active_limit {
+            if &top.chrom() < chrom || top.end() <= active_limit {
                 self.active_regions.pop();
             } else {
                 break;
@@ -52,7 +57,7 @@ where
 
     fn push_frontier(&mut self) -> Option<u32> {
         let new_frontier = self.peek_buffer.as_ref()?.begin();
-        let chrom = self.peek_buffer.as_ref()?.chrom().to_owned();
+        let chrom = self.peek_buffer.as_ref()?.chrom();
 
         while let Some(region) = self.peek_buffer.as_ref() {
             if region.begin() == new_frontier && chrom == region.chrom() {
@@ -72,9 +77,9 @@ where
         }
     }
 
-    fn ingest_active_regions(&mut self, chrom: &str, active_limit: u32) {
+    fn ingest_active_regions(&mut self, chrom: &C, active_limit: u32) {
         while let Some(region) = self.peek_buffer.as_ref() {
-            if region.begin() <= active_limit && region.chrom() == chrom {
+            if region.begin() <= active_limit && &region.chrom() == chrom {
                 self.active_regions.push(self.peek_buffer.take().unwrap());
                 self.peek_buffer = self.iter.next();
             } else {
@@ -93,13 +98,14 @@ pub enum State {
 
 impl State {
     fn next<
-        A: WithRegion + Clone,
-        B: WithRegion + Clone,
+        C: ChromName,
+        A: WithRegion<C> + Clone,
+        B: WithRegion<C> + Clone,
         IA: Iterator<Item = A> + Sorted,
         IB: Iterator<Item = B> + Sorted,
     >(
         &mut self,
-        ctx: (&mut Context<IA>, &mut Context<IB>),
+        ctx: (&mut Context<C, IA>, &mut Context<C, IB>),
     ) -> Option<(A, B)> {
         match self {
             Self::FrontierA(f_idx, h_idx, b_idx) if b_idx.is_none() => {
@@ -156,31 +162,33 @@ impl State {
     }
 }
 
-pub struct SortedIntersectIter<IA: Iterator + Sorted, IB: Iterator + Sorted>
+pub struct SortedIntersectIter<C:ChromName, IA: Iterator + Sorted, IB: Iterator + Sorted>
 where
-    IA::Item: WithRegion + Clone,
-    IB::Item: WithRegion + Clone,
+    IA::Item: WithRegion<C> + Clone,
+    IB::Item: WithRegion<C> + Clone,
 {
-    pub(super) context_a: Context<IA>,
-    pub(super) context_b: Context<IB>,
+    pub(super) context_a: Context<C, IA>,
+    pub(super) context_b: Context<C, IB>,
     pub(super) state: State,
 }
 
-impl<IA, IB> Sorted for SortedIntersectIter<IA, IB>
+impl<C, IA, IB> Sorted for SortedIntersectIter<C, IA, IB>
 where
+    C: ChromName,
     IA: Iterator + Sorted,
     IB: Iterator + Sorted,
-    IA::Item: WithRegion + Clone,
-    IB::Item: WithRegion + Clone,
+    IA::Item: WithRegion<C> + Clone,
+    IB::Item: WithRegion<C> + Clone,
 {
 }
 
-impl<IA, IB> Iterator for SortedIntersectIter<IA, IB>
+impl<C, IA, IB> Iterator for SortedIntersectIter<C, IA, IB>
 where
+    C: ChromName, 
     IA: Iterator + Sorted,
     IB: Iterator + Sorted,
-    IA::Item: WithRegion + Clone,
-    IB::Item: WithRegion + Clone,
+    IA::Item: WithRegion<C> + Clone,
+    IB::Item: WithRegion<C> + Clone,
 {
     type Item = (IA::Item, IB::Item);
     fn next(&mut self) -> Option<Self::Item> {
@@ -201,7 +209,7 @@ where
                 }
 
                 let chrom_cmp = if let (Some(peek_a), Some(peek_b)) = (peek_a, peek_b) {
-                    peek_a.chrom().cmp(peek_b.chrom())
+                    peek_a.chrom().cmp(&peek_b.chrom())
                 } else {
                     std::cmp::Ordering::Equal
                 };
@@ -209,13 +217,13 @@ where
                 match chrom_cmp {
                     std::cmp::Ordering::Less => {
                         self.context_a
-                            .skip_util_chrom(peek_b.as_ref().unwrap().chrom());
+                            .skip_util_chrom(&peek_b.as_ref().unwrap().chrom());
                         self.context_a.frontier.clear();
                         self.context_a.active_regions.data.clear();
                     }
                     std::cmp::Ordering::Greater => {
                         self.context_b
-                            .skip_util_chrom(peek_a.as_ref().unwrap().chrom());
+                            .skip_util_chrom(&peek_a.as_ref().unwrap().chrom());
                         self.context_b.frontier.clear();
                         self.context_b.active_regions.data.clear();
                     }
@@ -229,12 +237,12 @@ where
                 if frontier_a.unwrap_or(std::u32::MAX) <= frontier_b.unwrap_or(std::u32::MAX) {
                     let frontier = self.context_a.push_frontier()?;
                     self.context_b
-                        .ingest_active_regions(self.context_a.frontier[0].chrom(), frontier);
+                        .ingest_active_regions(&self.context_a.frontier[0].chrom(), frontier);
                     State::FrontierA(0, 0, None)
                 } else {
                     let frontier = self.context_b.push_frontier()?;
                     self.context_a
-                        .ingest_active_regions(self.context_b.frontier[0].chrom(), frontier);
+                        .ingest_active_regions(&self.context_b.frontier[0].chrom(), frontier);
                     State::FrontierB(0, 0, None)
                 };
         }
