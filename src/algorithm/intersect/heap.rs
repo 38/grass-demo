@@ -1,11 +1,11 @@
 use std::marker::PhantomData;
 
-use crate::{ChromName, properties::WithRegion};
+use crate::{properties::WithRegion, ChromName};
 
 // Rust std::collections::BinaryHeap has some limitations
-pub(super) struct RegionHeap<C:ChromName, T: WithRegion<C>> {
+pub(super) struct RegionHeap<C: ChromName, T: WithRegion<C>> {
     pub(super) data: Vec<T>,
-    _p: PhantomData<C>
+    _p: PhantomData<C>,
 }
 
 impl<C: ChromName, T: WithRegion<C>> Default for RegionHeap<C, T> {

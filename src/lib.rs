@@ -6,4 +6,7 @@ pub mod properties;
 pub mod records;
 
 pub mod chromset;
-pub use chromset::{ChromSet, ChromSetHandle, ChromName, LexicalChromSet};
+pub use chromset::{ChromName, ChromSet, ChromSetHandle, LexicalChromSet, WithChromSet};
+
+mod file;
+pub use file::{LineRecordStream, LineRecordStreamExt};

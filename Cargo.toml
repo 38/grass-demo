@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 d4-hts = {version = "0.1.16", optional=true}
+memchr = "2.3.4"
 
 [dev-dependencies]
 itertools = "0.10.0"

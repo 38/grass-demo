@@ -1,14 +1,14 @@
-use crate::{ChromName, properties::WithRegion};
 use super::heap::RegionHeap;
 use super::Sorted;
+use crate::{properties::WithRegion, ChromName};
 
 pub struct LeftOuterJoinIter<C, IA, IB>
 where
-    C : ChromName,
+    C: ChromName,
     IA: Iterator + Sorted,
     IB: Iterator + Sorted,
     IA::Item: WithRegion<C> + Clone,
-    IB::Item: WithRegion<C> + Clone
+    IB::Item: WithRegion<C> + Clone,
 {
     iter_a: IA,
     iter_b: IB,
@@ -20,15 +20,15 @@ where
     current_b_idx: usize,
 }
 
-impl <C, IA, IB> LeftOuterJoinIter<C, IA, IB>
+impl<C, IA, IB> LeftOuterJoinIter<C, IA, IB>
 where
     C: ChromName,
     IA: Iterator + Sorted,
     IB: Iterator + Sorted,
     IA::Item: WithRegion<C> + Clone,
-    IB::Item: WithRegion<C> + Clone
+    IB::Item: WithRegion<C> + Clone,
 {
-    pub(super) fn new(iter_a: IA, mut iter_b: IB)  -> Self {
+    pub(super) fn new(iter_a: IA, mut iter_b: IB) -> Self {
         let current_b = iter_b.next();
         let mut ret = Self {
             iter_a,
@@ -76,13 +76,13 @@ where
     }
 }
 
-impl <C, IA, IB> Iterator for LeftOuterJoinIter<C, IA, IB>
+impl<C, IA, IB> Iterator for LeftOuterJoinIter<C, IA, IB>
 where
     C: ChromName,
     IA: Iterator + Sorted,
     IB: Iterator + Sorted,
     IA::Item: WithRegion<C> + Clone,
-    IB::Item: WithRegion<C> + Clone, 
+    IB::Item: WithRegion<C> + Clone,
 {
     type Item = (IA::Item, Option<IB::Item>);
 
@@ -91,7 +91,10 @@ where
             let cur_a = self.current_a.as_ref()?;
             if self.current_b_idx < self.active_regions.data.len() {
                 self.current_b_idx += 1;
-                return Some((cur_a.clone(), Some(self.active_regions.data[self.current_b_idx - 1].clone())));
+                return Some((
+                    cur_a.clone(),
+                    Some(self.active_regions.data[self.current_b_idx - 1].clone()),
+                ));
             } else if self.current_b_idx == 0 && self.active_regions.data.len() == 0 {
                 self.current_b_idx += 1;
                 return Some((cur_a.clone(), None));
@@ -100,4 +103,3 @@ where
         }
     }
 }
-

@@ -1,14 +1,13 @@
 use crate::ChromName;
-
-/*
 use std::io::{Result, Write};
- pub trait Parsable: Sized {
-    fn parse<'a, T: Iterator<Item = &'a str>>(token_stream: &mut T) -> Option<Self>;
+
+pub trait Parsable<'a>: Sized {
+    fn parse(s: &'a str) -> Option<Self>;
 }
 
 pub trait Serializable {
     fn dump<W: Write>(&self, fp: W) -> Result<()>;
-}*/
+}
 
 pub trait WithRegion<Chrom: ChromName> {
     fn begin(&self) -> u32;
@@ -36,7 +35,7 @@ pub trait WithRegion<Chrom: ChromName> {
     }
 }
 
-impl<'a, Chrom:ChromName, T: WithRegion<Chrom>> WithRegion<Chrom> for &'a T {
+impl<'a, Chrom: ChromName, T: WithRegion<Chrom>> WithRegion<Chrom> for &'a T {
     fn begin(&self) -> u32 {
         T::begin(*self)
     }

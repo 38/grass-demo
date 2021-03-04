@@ -1,8 +1,6 @@
-//use crate::chrom::{Chrom, ChromList, ChromListRef};
-//
-use crate::{ChromName,ChromSetHandle};
-use crate::properties::{/*Parsable, Serializable, */ WithRegion};
-//use std::io::{Result, Write};
+use crate::properties::{Parsable, Serializable, WithRegion};
+use crate::{ChromName, ChromSetHandle, WithChromSet};
+use std::io::{Result, Write};
 
 #[derive(Clone)]
 pub struct Bed3<T: ChromName> {
@@ -10,6 +8,7 @@ pub struct Bed3<T: ChromName> {
     pub end: u32,
     pub chrom: T,
 }
+
 impl<T: ChromName> Bed3<T> {
     pub fn with_chrom_list<H: ChromSetHandle>(self, chrom_list: &mut H) -> Bed3<H::RefType> {
         let chrom = chrom_list.query_or_insert(self.chrom.to_string().as_ref());
@@ -21,33 +20,39 @@ impl<T: ChromName> Bed3<T> {
     }
 }
 
-impl<'a> Bed3<&'a str> {
-    pub fn new<T: WithRegion<&'a str>>(region: &'a T) -> Self {
+impl <T: ChromName, H: ChromSetHandle> WithChromSet<H> for Bed3<T> {
+    type Result = Bed3<H::RefType>;
+    fn with_chrom_set(self, handle: &mut H) -> Self::Result {
+        self.with_chrom_list(handle)
+    }
+}
+
+impl<'a> Parsable<'a> for Bed3<&'a str> {
+    fn parse(s: &'a str) -> Option<Self> {
+        let chrom_ofs = s.find('\t')?;
+        let chrom = &s[..chrom_ofs];
+
+        if s.len() == chrom_ofs + 1 {
+            return None;
+        }
+
+        let mut tokens = s[..chrom_ofs].split('\t');
+
+        Some(Self {
+            chrom,
+            begin: tokens.next()?.parse().ok()?,
+            end: tokens.next()?.parse().ok()?,
+        })
+    }
+}
+
+impl<C:ChromName> Bed3<C> {
+    pub fn new<T: WithRegion<C>>(region: T) -> Self {
         Self {
             begin: region.begin(),
             end: region.end(),
             chrom: region.chrom(),
         }
-    }
-}
-
-/*impl Parsable for Bed3<String> {
-    fn parse<'a, T: Iterator<Item = &'a str>>(tokens: &mut T) -> Option<Self> {
-        Some(Self {
-            chrom: tokens.next()?.to_owned(),
-            begin: tokens.next()?.parse().ok()?,
-            end: tokens.next()?.parse().ok()?,
-        })
-    }
-}
-
-impl <'a> Parsable<'a> for Bed3<&'a str> {
-    fn parse<T: Iterator<Item = &'a str>>(tokens: &mut T) -> Option<Self> {
-        Some(Self {
-            chrom: tokens.next()?,
-            begin: tokens.next()?.parse().ok()?,
-            end: tokens.next()?.parse().ok()?,
-        })
     }
 }
 
@@ -72,17 +77,18 @@ fn write_number<W: Write>(mut fp: W, mut n: u32) -> Result<()> {
 
         fp.write(&buf[..offset]).map(|_| ())
     }
-}*/
+}
 
-/*impl<T: Chrom> Serializable for Bed3<T> {
+impl<T: ChromName> Serializable for Bed3<T> {
     fn dump<W: Write>(&self, mut fp: W) -> Result<()> {
-        fp.write_all(self.chrom().as_bytes())?;
+        //fp.write_all(self.chrom().as_bytes())?;
+        self.chrom().write(&mut fp)?;
         fp.write(b"\t")?;
         write_number(&mut fp, self.begin())?;
         fp.write(b"\t")?;
         write_number(&mut fp, self.end()).map(|_| ())
     }
-}*/
+}
 
 impl<T: ChromName> WithRegion<T> for Bed3<T> {
     fn begin(&self) -> u32 {

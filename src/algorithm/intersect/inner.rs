@@ -1,11 +1,11 @@
 use std::marker::PhantomData;
 
-use crate::algorithm::Sorted;
-use crate::ChromName;
 use super::heap::RegionHeap;
+use crate::algorithm::Sorted;
 use crate::properties::WithRegion;
+use crate::ChromName;
 
-pub(super) struct Context<C:ChromName, I: Iterator + Sorted>
+pub(super) struct Context<C: ChromName, I: Iterator + Sorted>
 where
     I::Item: WithRegion<C> + Clone,
 {
@@ -16,7 +16,7 @@ where
     _p: PhantomData<C>,
 }
 
-impl<C:ChromName, I: Iterator + Sorted> Context<C, I>
+impl<C: ChromName, I: Iterator + Sorted> Context<C, I>
 where
     I::Item: WithRegion<C> + Clone,
 {
@@ -162,7 +162,7 @@ impl State {
     }
 }
 
-pub struct SortedIntersectIter<C:ChromName, IA: Iterator + Sorted, IB: Iterator + Sorted>
+pub struct SortedIntersectIter<C: ChromName, IA: Iterator + Sorted, IB: Iterator + Sorted>
 where
     IA::Item: WithRegion<C> + Clone,
     IB::Item: WithRegion<C> + Clone,
@@ -184,7 +184,7 @@ where
 
 impl<C, IA, IB> Iterator for SortedIntersectIter<C, IA, IB>
 where
-    C: ChromName, 
+    C: ChromName,
     IA: Iterator + Sorted,
     IB: Iterator + Sorted,
     IA::Item: WithRegion<C> + Clone,
@@ -248,5 +248,3 @@ where
         }
     }
 }
-
-

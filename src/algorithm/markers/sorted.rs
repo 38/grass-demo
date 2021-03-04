@@ -1,12 +1,12 @@
 use crate::properties::WithRegion;
 use crate::ChromName;
 
-pub trait Sorted: Iterator{}
+pub trait Sorted: Iterator {}
 
 pub trait AssumeSorted: Iterator + Sized {
-    fn assume_sorted<C: ChromName>(self) -> AssumingSortedIter<Self> 
+    fn assume_sorted<C: ChromName>(self) -> AssumingSortedIter<Self>
     where
-        Self::Item : WithRegion<C>
+        Self::Item: WithRegion<C>,
     {
         AssumingSortedIter { inner: self }
     }
@@ -27,8 +27,4 @@ impl<T: Iterator> Iterator for AssumingSortedIter<T> {
 
 impl<T: Iterator> Sorted for AssumingSortedIter<T> {}
 
-impl<T: Iterator + Sorted, P> Sorted for std::iter::Filter<T, P>
-where
-    P: Fn(&T::Item) -> bool,
-{
-}
+impl<T: Iterator + Sorted, P> Sorted for std::iter::Filter<T, P> where P: Fn(&T::Item) -> bool {}

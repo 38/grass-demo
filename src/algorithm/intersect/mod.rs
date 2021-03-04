@@ -2,16 +2,20 @@ mod heap;
 mod inner;
 mod outer;
 
-use crate::{ChromName, algorithm::markers::Sorted};
 use crate::properties::WithRegion;
+use crate::{algorithm::markers::Sorted, ChromName};
 
-use inner::{SortedIntersectIter, Context, State};
+use inner::{Context, SortedIntersectIter, State};
 
 pub trait SortedIntersect: Iterator + Sorted + Sized {
-    fn sorted_intersect<C: ChromName, U: WithRegion<C> + Clone, Other: Iterator<Item = U> + Sorted>(
+    fn sorted_intersect<
+        C: ChromName,
+        U: WithRegion<C> + Clone,
+        Other: Iterator<Item = U> + Sorted,
+    >(
         self,
         other: Other,
-    ) -> SortedIntersectIter<C, Self, Other> 
+    ) -> SortedIntersectIter<C, Self, Other>
     where
         Self::Item: WithRegion<C> + Clone,
     {
@@ -22,10 +26,14 @@ pub trait SortedIntersect: Iterator + Sorted + Sized {
         }
     }
 
-    fn sorted_left_outer_intersect<C: ChromName, U: WithRegion<C> + Clone, Other: Iterator<Item = U> + Sorted>(
+    fn sorted_left_outer_intersect<
+        C: ChromName,
+        U: WithRegion<C> + Clone,
+        Other: Iterator<Item = U> + Sorted,
+    >(
         self,
-        other: Other
-    ) -> outer::LeftOuterJoinIter<C, Self, Other> 
+        other: Other,
+    ) -> outer::LeftOuterJoinIter<C, Self, Other>
     where
         Self::Item: WithRegion<C> + Clone,
     {
@@ -34,4 +42,3 @@ pub trait SortedIntersect: Iterator + Sorted + Sized {
 }
 
 impl<I: Iterator + Sorted> SortedIntersect for I {}
-

@@ -1,11 +1,19 @@
-use std::{borrow::Borrow, fmt::{Debug, Formatter, Result as FmtResult}};
 use std::cell::UnsafeCell;
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::io::Write;
 use std::cmp::Ordering;
+use std::collections::HashMap;
+use std::io::Write;
+use std::sync::Arc;
+use std::{
+    borrow::Borrow,
+    fmt::{Debug, Formatter, Result as FmtResult},
+};
 
-pub trait ChromName : Ord + Clone {
+pub trait WithChromSet<H: ChromSetHandle> {
+    type Result;
+    fn with_chrom_set(self, handle: &mut H) -> Self::Result;
+}
+
+pub trait ChromName: Ord + Clone {
     fn to_string(&self) -> String;
     fn write<W: Write>(&self, w: W) -> std::io::Result<()>;
 }
@@ -20,7 +28,7 @@ impl ChromName for String {
     }
 }
 
-impl <'a> ChromName for &'a str {
+impl<'a> ChromName for &'a str {
     fn to_string(&self) -> String {
         str::to_string(self)
     }
@@ -31,13 +39,13 @@ impl <'a> ChromName for &'a str {
 }
 
 pub trait ChromSetHandle {
-    type RefType : ChromName;
+    type RefType: ChromName;
     fn query_or_insert(&mut self, name: &str) -> Self::RefType;
 }
 
 pub trait ChromSet {
-    type RefType : ChromName;
-    type Handle : ChromSetHandle<RefType = Self::RefType>;
+    type RefType: ChromName;
+    type Handle: ChromSetHandle<RefType = Self::RefType>;
     fn get_handle(&self) -> Self::Handle;
 }
 
@@ -60,7 +68,8 @@ impl StringPool {
         if let Some(id) = self.query_id(s.borrow()) {
             id
         } else {
-            self.s2i_map.insert(s.borrow().to_string(), self.i2s_map.len());
+            self.s2i_map
+                .insert(s.borrow().to_string(), self.i2s_map.len());
             self.i2s_map.push(s.borrow().to_string());
             self.i2s_map.len() - 1
         }
@@ -81,7 +90,7 @@ pub struct LexicalChromRef {
 
 impl Debug for LexicalChromRef {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-        let value = self.to_string(); 
+        let value = self.to_string();
         write!(f, "{}(Id={})", value, self.idx)
     }
 }
@@ -105,21 +114,17 @@ impl PartialEq for LexicalChromRef {
         if self.pool.get() == other.pool.get() {
             return self.idx == other.idx;
         }
-        unsafe {
-            self.get_string_ref() == other.get_string_ref()
-        }
+        unsafe { self.get_string_ref() == other.get_string_ref() }
     }
 }
 
 impl PartialOrd for LexicalChromRef {
-   fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         if self.pool.get() == other.pool.get() && self.idx == other.idx {
-           return Some(Ordering::Equal); 
+            return Some(Ordering::Equal);
         }
-        unsafe {
-            Some(Ord::cmp(self.get_string_ref(), other.get_string_ref()))
-        }
-   } 
+        unsafe { Some(Ord::cmp(self.get_string_ref(), other.get_string_ref())) }
+    }
 }
 
 impl Eq for LexicalChromRef {}
@@ -132,9 +137,7 @@ impl Ord for LexicalChromRef {
 
 impl ChromName for LexicalChromRef {
     fn to_string(&self) -> String {
-        let ret = unsafe {
-            self.get_string_ref().to_string()
-        };
+        let ret = unsafe { self.get_string_ref().to_string() };
         ret
     }
 
@@ -156,11 +159,10 @@ impl ChromSetHandle for LexicalChromHandle {
     }
 }
 
-
 impl LexicalChromSet {
     pub fn new() -> Self {
         Self {
-            pool: Arc::new(UnsafeCell::new(StringPool::default()))
+            pool: Arc::new(UnsafeCell::new(StringPool::default())),
         }
     }
 }
@@ -174,7 +176,6 @@ impl ChromSet for LexicalChromSet {
         }
     }
 }
-
 
 #[cfg(test)]
 mod test {

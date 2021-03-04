@@ -1,36 +1,23 @@
 use std::env::args;
 use std::fs::File;
-use std::io::{BufRead, BufReader, BufWriter, Result, Write};
+use std::io::{BufWriter, Result, Write};
 
-use gql::algorithm::AssumeSorted;
+use gql::{algorithm::AssumeSorted, chromset::LexicalChromRef};
 use gql::algorithm::SortedIntersect;
-use gql::properties::{Parsable, Serializable};
+use gql::properties::Serializable;
 use gql::records::Bed3;
-
-fn parse_file<T: Parsable>(path: &str) -> Result<impl Iterator<Item = Option<T>>> {
-    let file = BufReader::new(File::open(path)?);
-    Ok(file.lines().map(|line| {
-        if let Ok(line) = line {
-            return T::parse(&mut line.split('\t'));
-        }
-        None
-    }))
-}
+use gql::LineRecordStreamExt;
+use gql::LexicalChromSet;
 
 fn main() -> Result<()> {
     let args: Vec<_> = args().skip(1).take(4).collect();
 
-    let file1 = parse_file::<Bed3<String>>(&args[0])?
-        .map(|x| x.unwrap())
-        .assume_sorted();
+    let chroms = LexicalChromSet::new();
 
-    let file2 = parse_file::<Bed3<String>>(&args[1])?
-        .map(|x| x.unwrap())
-        .assume_sorted();
+    let file1 = File::open(&args[0])?.into_record_iter::<Bed3<LexicalChromRef>, _>(&chroms).assume_sorted();
+    let file2 = File::open(&args[1])?.into_record_iter::<Bed3<LexicalChromRef>, _>(&chroms).assume_sorted();
+    let file3 = File::open(&args[2])?.into_record_iter::<Bed3<LexicalChromRef>, _>(&chroms).assume_sorted();
 
-    let file3 = parse_file::<Bed3<String>>(&args[2])?
-        .map(|x| x.unwrap())
-        .assume_sorted();
 
     let mut out_file = BufWriter::new(File::create(&args[3])?);
 
