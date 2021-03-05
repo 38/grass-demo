@@ -28,15 +28,17 @@ impl <T: ChromName, H: ChromSetHandle> WithChromSet<H> for Bed3<T> {
 }
 
 impl<'a> Parsable<'a> for Bed3<&'a str> {
-    fn parse(s: &'a str) -> Option<Self> {
+    fn parse(mut s: &'a str) -> Option<Self> {
         let chrom_ofs = s.find('\t')?;
         let chrom = &s[..chrom_ofs];
 
         if s.len() == chrom_ofs + 1 {
             return None;
         }
-
-        let mut tokens = s[..chrom_ofs].split('\t');
+        if "\n" == &s[s.len() - 1..] {
+            s = &s[..s.len() - 1]
+        }
+        let mut tokens = s[chrom_ofs + 1..].split('\t');
 
         Some(Self {
             chrom,

@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::io::Write;
 use std::sync::Arc;
 use std::{
-    borrow::Borrow,
+    borrow::{Borrow, Cow},
     fmt::{Debug, Formatter, Result as FmtResult},
 };
 
@@ -14,13 +14,13 @@ pub trait WithChromSet<H: ChromSetHandle> {
 }
 
 pub trait ChromName: Ord + Clone {
-    fn to_string(&self) -> String;
+    fn to_string(&self) -> Cow<str>;
     fn write<W: Write>(&self, w: W) -> std::io::Result<()>;
 }
 
 impl ChromName for String {
-    fn to_string(&self) -> String {
-        self.clone()
+    fn to_string(&self) -> Cow<str> {
+        Cow::Borrowed(self)
     }
 
     fn write<W: Write>(&self, mut w: W) -> std::io::Result<()> {
@@ -29,8 +29,8 @@ impl ChromName for String {
 }
 
 impl<'a> ChromName for &'a str {
-    fn to_string(&self) -> String {
-        str::to_string(self)
+    fn to_string(&self) -> Cow<str> {
+        Cow::Borrowed(*self)
     }
 
     fn write<W: Write>(&self, mut w: W) -> std::io::Result<()> {
@@ -136,9 +136,11 @@ impl Ord for LexicalChromRef {
 }
 
 impl ChromName for LexicalChromRef {
-    fn to_string(&self) -> String {
+    // Note we don't awllow any long live reference to the internal string poll
+    // so that we need to copy it
+    fn to_string(&self) -> Cow<str> {
         let ret = unsafe { self.get_string_ref().to_string() };
-        ret
+        Cow::Owned(ret)
     }
 
     fn write<W: Write>(&self, mut w: W) -> std::io::Result<()> {

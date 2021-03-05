@@ -36,6 +36,7 @@ impl <R: Read> LineRecordStreamExt for R {}
 impl <C: ChromSet, R: Read> Iterator for LineRecordStream<C, R, Bed3<C::RefType>> {
     type Item = Bed3<C::RefType>;
     fn next(&mut self) -> Option<Self::Item> {
+        self.buffer.clear();
         self.reader.read_line(&mut self.buffer).ok()?;
         let parsed = Bed3::parse(self.buffer.as_ref())?;
         Some(parsed.with_chrom_set(&mut self.chrom_set_handle))
@@ -45,6 +46,7 @@ impl <C: ChromSet, R: Read> Iterator for LineRecordStream<C, R, Bed3<C::RefType>
 impl <C: ChromSet, R: Read> Iterator for LineRecordStream<C, R, Bed4<C::RefType>> {
     type Item = Bed4<C::RefType>;
     fn next(&mut self) -> Option<Self::Item> {
+        self.buffer.clear();
         self.reader.read_line(&mut self.buffer).ok()?;
         let parsed = Bed4::parse(self.buffer.as_ref())?;
         Some(parsed.with_chrom_set(&mut self.chrom_set_handle))
