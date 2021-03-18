@@ -3,3 +3,4 @@
 perf.*
 run.sh
 **/.*.sw*
+.ipynb_checkpoints

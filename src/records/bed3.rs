@@ -1,9 +1,12 @@
-use crate::properties::{Parsable, Serializable, WithRegion};
+use crate::{
+    chromset::LexicalChromRef,
+    properties::{Parsable, Serializable, WithName, WithRegion, WithScore, WithStrand},
+};
 use crate::{ChromName, ChromSetHandle, WithChromSet};
 use std::io::{Result, Write};
 
 #[derive(Clone)]
-pub struct Bed3<T: ChromName> {
+pub struct Bed3<T: ChromName = LexicalChromRef> {
     pub begin: u32,
     pub end: u32,
     pub chrom: T,
@@ -20,7 +23,7 @@ impl<T: ChromName> Bed3<T> {
     }
 }
 
-impl <T: ChromName, H: ChromSetHandle> WithChromSet<H> for Bed3<T> {
+impl<T: ChromName, H: ChromSetHandle> WithChromSet<H> for Bed3<T> {
     type Result = Bed3<H::RefType>;
     fn with_chrom_set(self, handle: &mut H) -> Self::Result {
         self.with_chrom_list(handle)
@@ -28,67 +31,47 @@ impl <T: ChromName, H: ChromSetHandle> WithChromSet<H> for Bed3<T> {
 }
 
 impl<'a> Parsable<'a> for Bed3<&'a str> {
-    fn parse(mut s: &'a str) -> Option<Self> {
-        let chrom_ofs = s.find('\t')?;
-        let chrom = &s[..chrom_ofs];
+    fn parse(s: &'a str) -> Option<(Self, usize)> {
+        let mut bytes = s.as_bytes();
 
-        if s.len() == chrom_ofs + 1 {
-            return None;
+        if bytes.last() == Some(&b'\n') {
+            bytes = &bytes[..bytes.len() - 1];
         }
-        if "\n" == &s[s.len() - 1..] {
-            s = &s[..s.len() - 1]
-        }
-        let mut tokens = s[chrom_ofs + 1..].split('\t');
 
-        Some(Self {
-            chrom,
-            begin: tokens.next()?.parse().ok()?,
-            end: tokens.next()?.parse().ok()?,
-        })
+        let mut token_pos_iter = memchr::Memchr::new(b'\t', bytes);
+        let end_1 = token_pos_iter.next()?;
+        let end_2 = token_pos_iter.next()?;
+        let end_3 = token_pos_iter.next().unwrap_or(bytes.len());
+        let chrom = &s[..end_1];
+
+        Some((
+            Self {
+                chrom,
+                begin: s[end_1 + 1..end_2].parse().ok()?,
+                end: s[end_2 + 1..end_3].parse().ok()?,
+            },
+            end_3,
+        ))
     }
 }
 
-impl<C:ChromName> Bed3<C> {
+impl<C: ChromName + Clone> Bed3<C> {
     pub fn new<T: WithRegion<C>>(region: T) -> Self {
         Self {
             begin: region.begin(),
             end: region.end(),
-            chrom: region.chrom(),
+            chrom: region.chrom().clone(),
         }
-    }
-}
-
-fn write_number<W: Write>(mut fp: W, mut n: u32) -> Result<()> {
-    if n == 0 {
-        fp.write(b"0").map(|_| ())
-    } else {
-        let mut buf = [0; 10];
-        let mut offset = 0;
-        let mut begin = 0;
-        while n > 0 {
-            buf[offset] = b'0' + (n % 10) as u8;
-            n /= 10;
-            offset += 1;
-        }
-        let mut end = offset - 1;
-        while begin < end {
-            buf.swap(begin, end);
-            begin += 1;
-            end -= 1;
-        }
-
-        fp.write(&buf[..offset]).map(|_| ())
     }
 }
 
 impl<T: ChromName> Serializable for Bed3<T> {
     fn dump<W: Write>(&self, mut fp: W) -> Result<()> {
-        //fp.write_all(self.chrom().as_bytes())?;
         self.chrom().write(&mut fp)?;
         fp.write(b"\t")?;
-        write_number(&mut fp, self.begin())?;
+        crate::ioutils::write_number(&mut fp, self.begin() as i32)?;
         fp.write(b"\t")?;
-        write_number(&mut fp, self.end()).map(|_| ())
+        crate::ioutils::write_number(&mut fp, self.end() as i32).map(|_| ())
     }
 }
 
@@ -101,7 +84,15 @@ impl<T: ChromName> WithRegion<T> for Bed3<T> {
         self.end
     }
 
-    fn chrom(&self) -> T {
-        self.chrom.clone()
+    fn chrom(&self) -> &T {
+        &self.chrom
     }
 }
+
+impl<T: ChromName> WithName for Bed3<T> {
+    fn name(&self) -> &str {
+        "."
+    }
+}
+impl<T: ChromName> WithScore<i32> for Bed3<T> {}
+impl<T: ChromName> WithStrand for Bed3<T> {}

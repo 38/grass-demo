@@ -4,12 +4,11 @@ use std::io::{BufWriter, Result, Write};
 
 use gql::properties::{Serializable, WithRegion};
 use gql::records::Bed3;
-use gql::{LineRecordStreamExt, LexicalChromSet, chromset::LexicalChromRef};
-
+use gql::{chromset::LexicalChromRef, LexicalChromSet, LineRecordStreamExt};
 
 fn main() -> Result<()> {
     let args: Vec<_> = args().skip(1).take(3).collect();
-    
+
     let chroms = LexicalChromSet::new();
 
     let bed3_file = File::open(&args[0])?.into_record_iter::<Bed3<LexicalChromRef>, _>(&chroms);

@@ -33,9 +33,9 @@ impl<C: ChromName, T: WithRegion<C>> Debug for Point<C, T> {
 impl<C: ChromName, T: WithRegion<C>> Point<C, T> {
     pub fn position(&self) -> (C, u32) {
         if self.is_open {
-            (self.value.chrom(), self.value.begin())
+            (self.value.chrom().clone(), self.value.begin())
         } else {
-            (self.value.chrom(), self.value.end())
+            (self.value.chrom().clone(), self.value.end())
         }
     }
 }
@@ -106,7 +106,7 @@ where
         if let Some((index, peek_buffer)) = self.peek_buffer.as_ref() {
             let index = *index;
             if self.heap.peek().map_or(false, |x| {
-                x.0.position() < (peek_buffer.chrom(), peek_buffer.begin())
+                x.0.position() < (peek_buffer.chrom().clone(), peek_buffer.begin())
             }) {
                 let depth = self.heap.len();
                 return self.heap.pop().map(|Reverse(mut x)| {

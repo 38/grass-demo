@@ -3,16 +3,16 @@ use std::fs::File;
 use std::io::Result;
 
 use gql::algorithm::{AssumeSorted, Components};
-use gql::ChromName;
 use gql::records::Bed3;
+use gql::ChromName;
 
-use gql::{LineRecordStreamExt, LexicalChromSet, chromset::LexicalChromRef};
+use gql::{chromset::LexicalChromRef, LexicalChromSet, LineRecordStreamExt};
 
 use itertools::{kmerge, Itertools};
 
 fn main() -> Result<()> {
     let args: Vec<_> = args().skip(1).collect();
-    
+
     let chroms = LexicalChromSet::new();
 
     let inputs: Vec<_> = args[0..args.len()]
@@ -43,7 +43,13 @@ fn main() -> Result<()> {
         if let Some((left_chr, left_pos)) = last_pos {
             //TODO: Rust's println macro is very slow
             if left_chr == chr && active_count > 0 {
-                println!("{}\t{}\t{}\t{:?}", chr.to_string(), left_pos, pos, current_depth);
+                println!(
+                    "{}\t{}\t{}\t{:?}",
+                    chr.to_string(),
+                    left_pos,
+                    pos,
+                    current_depth
+                );
             }
         }
 

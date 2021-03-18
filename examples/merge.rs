@@ -6,7 +6,7 @@ use gql::algorithm::AssumeSorted;
 use gql::algorithm::Components;
 use gql::properties::Serializable;
 use gql::records::Bed3;
-use gql::{LineRecordStreamExt, LexicalChromSet, chromset::LexicalChromRef};
+use gql::{chromset::LexicalChromRef, LexicalChromSet, LineRecordStreamExt};
 
 use itertools::Itertools;
 
@@ -15,7 +15,9 @@ fn main() -> Result<()> {
 
     let chroms = LexicalChromSet::new();
 
-    let bed3_file = File::open(&args[0])?.into_record_iter::<Bed3<LexicalChromRef>, _>(&chroms).assume_sorted();
+    let bed3_file = File::open(&args[0])?
+        .into_record_iter::<Bed3<LexicalChromRef>, _>(&chroms)
+        .assume_sorted();
 
     let mut out_file = BufWriter::new(File::create(&args[1])?);
 

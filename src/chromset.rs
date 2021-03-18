@@ -1,11 +1,11 @@
-use std::cell::UnsafeCell;
-use std::cmp::Ordering;
-use std::collections::HashMap;
-use std::io::Write;
-use std::sync::Arc;
 use std::{
     borrow::{Borrow, Cow},
+    cell::UnsafeCell,
+    cmp::Ordering,
+    collections::HashMap,
     fmt::{Debug, Formatter, Result as FmtResult},
+    io::Write,
+    sync::Arc,
 };
 
 pub trait WithChromSet<H: ChromSetHandle> {
@@ -65,7 +65,11 @@ impl StringPool {
     }
 
     fn query_id_or_insert<T: Borrow<str>>(&mut self, s: T) -> usize {
-        if let Some(id) = self.query_id(s.borrow()) {
+        let sref = s.borrow();
+        if Some(sref) == self.i2s_map.last().map(Borrow::borrow) {
+            return self.i2s_map.len() - 1;
+        }
+        if let Some(id) = self.query_id(sref) {
             id
         } else {
             self.s2i_map
@@ -115,6 +119,12 @@ impl PartialEq for LexicalChromRef {
             return self.idx == other.idx;
         }
         unsafe { self.get_string_ref() == other.get_string_ref() }
+    }
+}
+
+impl PartialEq<str> for LexicalChromRef {
+    fn eq(&self, other: &str) -> bool {
+        unsafe { self.get_string_ref() == other }
     }
 }
 

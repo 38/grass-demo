@@ -33,7 +33,7 @@ where
 
     fn skip_util_chrom(&mut self, target: &C) {
         while let Some(head) = self.peek_buffer.as_ref() {
-            if &head.chrom() < target {
+            if head.chrom() < target {
                 self.peek_buffer = self.iter.next();
             } else {
                 break;
@@ -47,7 +47,7 @@ where
 
     fn remove_inactive_regions(&mut self, chrom: &C, active_limit: u32) {
         while let Some(top) = self.active_regions.peek() {
-            if &top.chrom() < chrom || top.end() <= active_limit {
+            if top.chrom() < chrom || top.end() <= active_limit {
                 self.active_regions.pop();
             } else {
                 break;
@@ -57,10 +57,10 @@ where
 
     fn push_frontier(&mut self) -> Option<u32> {
         let new_frontier = self.peek_buffer.as_ref()?.begin();
-        let chrom = self.peek_buffer.as_ref()?.chrom();
+        let chrom = self.peek_buffer.as_ref()?.chrom().clone();
 
         while let Some(region) = self.peek_buffer.as_ref() {
-            if region.begin() == new_frontier && chrom == region.chrom() {
+            if region.begin() == new_frontier && &chrom == region.chrom() {
                 self.frontier.push(self.peek_buffer.take().unwrap());
                 self.peek_buffer = self.iter.next();
             } else {
@@ -79,7 +79,7 @@ where
 
     fn ingest_active_regions(&mut self, chrom: &C, active_limit: u32) {
         while let Some(region) = self.peek_buffer.as_ref() {
-            if region.begin() <= active_limit && &region.chrom() == chrom {
+            if region.begin() <= active_limit && region.chrom() == chrom {
                 self.active_regions.push(self.peek_buffer.take().unwrap());
                 self.peek_buffer = self.iter.next();
             } else {

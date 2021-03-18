@@ -9,3 +9,6 @@ pub use bed3::Bed3;
 
 mod bed4;
 pub use bed4::Bed4;
+
+mod bed5;
+pub use bed5::Bed5;

@@ -48,8 +48,8 @@ where
         self.current_a = self.iter_a.next();
         let cur_a = self.current_a.as_ref()?;
 
-        if Some(cur_a.chrom()) != self.current_chrom {
-            self.current_chrom = Some(cur_a.chrom());
+        if Some(cur_a.chrom()) != self.current_chrom.as_ref() {
+            self.current_chrom = Some(cur_a.chrom().clone());
             self.limit = 0;
             self.active_regions.data.clear();
         }
@@ -57,7 +57,7 @@ where
         self.limit = self.limit.max(cur_a.end());
 
         while let Some(ref b) = self.current_b {
-            if Some(b.chrom()) > self.current_chrom || self.limit <= b.end() {
+            if Some(b.chrom()) > self.current_chrom.as_ref() || self.limit <= b.end() {
                 break;
             }
             self.active_regions.push(self.current_b.take().unwrap());
