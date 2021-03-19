@@ -1,9 +1,12 @@
-use std::collections::BinaryHeap;
 use std::fmt::{Debug, Formatter, Result};
 use std::iter::Enumerate;
 use std::{
     cmp::{Ordering, Reverse},
     marker::PhantomData,
+};
+use std::{
+    collections::{BinaryHeap, HashMap},
+    hash::Hash,
 };
 
 use crate::{properties::WithRegion, ChromName};
@@ -139,5 +142,82 @@ where
                 x
             })
         }
+    }
+}
+
+pub struct TaggedComponent<C, I, R, T, F>
+where
+    C: ChromName,
+    I: Iterator<Item = Point<C, R>>,
+    R: WithRegion<C> + Clone,
+    T: Clone + Hash + Eq,
+    F: FnMut(&R) -> T,
+{
+    tag_func: F,
+    state: HashMap<T, usize>,
+    component_iter: I,
+    _phantom: PhantomData<C>,
+}
+
+pub trait TaggedComponentExt<C: ChromName, R>
+where
+    R: WithRegion<C> + Clone,
+    Self: Iterator<Item = Point<C, R>>,
+{
+    fn with_tag<T, F>(self, tag_func: F) -> TaggedComponent<C, Self, R, T, F>
+    where
+        T: Clone + Hash + Eq,
+        F: FnMut(&R) -> T,
+        Self: Sized,
+    {
+        TaggedComponent {
+            tag_func,
+            state: HashMap::new(),
+            component_iter: self,
+            _phantom: Default::default(),
+        }
+    }
+}
+
+impl<T, C, R> TaggedComponentExt<C, R> for T
+where
+    C: ChromName,
+    R: WithRegion<C> + Clone,
+    Self: Iterator<Item = Point<C, R>>,
+{
+}
+
+impl<C, I, R, T, F> Iterator for TaggedComponent<C, I, R, T, F>
+where
+    C: ChromName,
+    I: Iterator<Item = Point<C, R>>,
+    R: WithRegion<C> + Clone,
+    T: Clone + Hash + Eq,
+    F: FnMut(&R) -> T,
+{
+    type Item = (T, Point<C, R>);
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut next_comp = self.component_iter.next()?;
+        let tag = (self.tag_func)(&next_comp.value);
+        let tagged_depth = if next_comp.is_open {
+            let cell = self.state.entry(tag.clone()).or_insert(0);
+            *cell += 1;
+            *cell
+        } else {
+            let depth = self
+                .state
+                .get_mut(&tag)
+                .map(|depth| {
+                    *depth -= 1;
+                    *depth
+                })
+                .unwrap_or(0);
+            if depth == 0 {
+                self.state.remove(&tag);
+            }
+            depth
+        };
+        next_comp.depth = tagged_depth;
+        Some((tag, next_comp))
     }
 }

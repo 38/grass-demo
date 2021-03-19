@@ -5,4 +5,4 @@ mod markers;
 pub use markers::{AssumeSorted, AssumingSortedIter, Sorted};
 
 mod components;
-pub use components::{Components, ComponentsIter, Point};
+pub use components::{Components, ComponentsIter, Point, TaggedComponent, TaggedComponentExt};

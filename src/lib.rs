@@ -17,19 +17,16 @@ pub mod high_level_api {
     pub use crate::{
         algorithm::{
             AssumeSorted, AssumingSortedIter, Components, ComponentsIter, Point, Sorted,
-            SortedIntersect,
+            SortedIntersect, TaggedComponentExt,
         },
         chromset::LexicalChromRef,
         properties::{Serializable, WithRegion},
         records::{Bed3, Bed4, Bed5},
     };
-    use std::{
-        cell::RefCell,
-        fmt::{Debug, Formatter},
-        iter::Take,
-        path::Path,
-    };
+    use std::{cell::RefCell, collections::HashMap, fmt::{Debug, Formatter}, hash::Hash, iter::Take, path::Path, rc::Rc};
     use std::{io::Write, thread_local};
+
+    use self::algorithm::TaggedComponent;
 
     pub use super::*;
 
@@ -156,6 +153,46 @@ pub mod high_level_api {
         }
     }
 
+    pub struct TaggedMerger<I, T> {
+        iter: I,
+        chrom: Option<LexicalChromRef>,
+        begins: HashMap<T, u32>,
+    }
+
+    impl <I, R, T> Iterator for TaggedMerger<I, T>
+    where
+        I: Iterator<Item = (T, Point<LexicalChromRef, R>)>,
+        R: WithRegion<LexicalChromRef> + Clone,
+        T: ToString + Eq + Hash, 
+    {
+        type Item = Bed4<LexicalChromRef>;
+        fn next(&mut self) -> Option<Self::Item> {
+            while let Some((tag, comp)) = self.iter.next() {
+                let (chr, pos) = comp.position();
+                if Some(&chr) != self.chrom.as_ref() {
+                    self.begins.clear();
+                }
+                self.chrom = Some(chr);
+                if let Some(&begin) = self.begins.get(&tag) {
+                    if !comp.is_open {
+                        let core = Bed3 {
+                            chrom: self.chrom.clone().unwrap(), begin, end: pos
+                        };
+                        let result = Bed4 {
+                            core,
+                            name: Rc::new(tag.to_string()),
+                        };
+                        self.begins.remove(&tag);
+                        return Some(result);
+                    }
+                } else {
+                    self.begins.entry(tag).or_insert(pos);
+                }
+            }
+            None
+        }
+    }
+
     pub trait MergeExt
     where
         Self: IntoIterator + Sized,
@@ -166,6 +203,25 @@ pub mod high_level_api {
             let mut iter = self.into_iter().components();
             let peek = iter.next();
             Merger { iter, peek }
+        }
+        fn tagged_merge<T: Clone + Hash + Eq, F: FnMut(&Self::Item) -> T>(
+            self,
+            f: F,
+        ) -> TaggedMerger<
+            TaggedComponent<
+                LexicalChromRef,
+                ComponentsIter<LexicalChromRef, Self::IntoIter>,
+                Self::Item,
+                T,
+                F,
+            >,
+            T,
+        > {
+            TaggedMerger {
+                iter: self.into_iter().components().with_tag(f),
+                begins: HashMap::new(),
+                chrom: None,
+            }
         }
     }
     impl<T: IntoIterator + Sized> MergeExt for T
