@@ -17,7 +17,7 @@ itertools = "0.10.0"
 itertools = "0.10.0"
 
 [lib]
-name = "gql"
+name = "grass"
 
 [profile.release]
 debug = true
