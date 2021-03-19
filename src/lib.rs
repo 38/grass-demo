@@ -23,7 +23,7 @@ pub mod high_level_api {
         properties::{Serializable, WithRegion},
         records::{Bed3, Bed4, Bed5},
     };
-    use std::{cell::RefCell, collections::HashMap, fmt::{Debug, Formatter}, hash::Hash, iter::Take, path::Path, rc::Rc};
+    use std::{cell::RefCell, collections::HashMap, fmt::{Debug, Formatter}, fs::File, hash::Hash, io::BufWriter, iter::Take, path::Path, rc::Rc};
     use std::{io::Write, thread_local};
 
     use self::algorithm::TaggedComponent;
@@ -112,6 +112,16 @@ pub mod high_level_api {
             Show {
                 iter: RefCell::new(self.into_iter()),
             }
+        }
+        fn save<P: AsRef<Path>>(self, path: P) -> std::io::Result<()> 
+        where Self::Item : Serializable
+        {
+            let mut out = BufWriter::new(File::create(path)?);
+            for item in self {
+                item.dump(&mut out)?;
+                out.write_all("\n".as_bytes())?;
+            }
+            Ok(())
         }
     }
 
