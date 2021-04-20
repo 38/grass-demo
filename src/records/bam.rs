@@ -1,10 +1,10 @@
 use crate::properties::WithRegion;
 
 use crate::{ChromName, ChromSet, ChromSetHandle};
-use d4_hts::{Alignment, AlignmentReader};
+use hts::alignment::{Alignment, AlignmentReader, AlignmentFile};
 use std::rc::Rc;
 
-pub use d4_hts::BamFile;
+pub type BamFile = AlignmentFile;
 
 #[derive(Clone)]
 pub struct BAMRecord<'a, C: ChromName> {
@@ -17,14 +17,19 @@ impl<'a, C: ChromName + 'a> BAMRecord<'a, C> {
         file: &'a BamFile,
         mut handle: S::Handle,
     ) -> impl Iterator<Item = BAMRecord<'a, C>> + 'a {
-        let chrom_list: Vec<C> = file
-            .chroms()
-            .iter()
-            .map(|(name, _)| handle.query_or_insert(name))
-            .collect();
-        let iter = file.to_alignment_iter();
-        iter.map(|res| res.unwrap()).map(move |record| BAMRecord {
-            chrom_name: chrom_list[record.ref_id() as usize].clone(),
+        let mut chrom_list: Vec<C> = vec![];
+
+        for idx in 0.. {
+            if let Ok(chrom_name) = file.get_chrom_name_by_id(idx) {
+                chrom_list.push(handle.query_or_insert(chrom_name));
+            } else {
+                break;
+            }
+        }
+
+        let iter = file.alignment_iter();
+        iter.map(move |record| BAMRecord {
+            chrom_name: chrom_list[record.chrom_id()].clone(),
             record: Rc::new(record),
         })
     }

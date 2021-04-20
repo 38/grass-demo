@@ -1,8 +1,15 @@
-#[cfg(feature = "d4-hts")]
+#[cfg(feature = "hts")]
 mod bam;
 
-#[cfg(feature = "d4-hts")]
+#[cfg(feature = "hts")]
 pub use bam::{BAMRecord, BamFile};
+
+#[cfg(feature = "hts")]
+mod vcf;
+
+#[cfg(feature = "hts")]
+pub use vcf::{VcfRecord, VcfFile}; 
+
 
 mod bed3;
 pub use bed3::Bed3;

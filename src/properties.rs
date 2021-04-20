@@ -101,3 +101,18 @@ impl<A: Serializable, B: Serializable> Serializable for (A, B) {
         self.1.dump(&mut fp)
     }
 }
+
+pub enum Nuclide {
+    A,
+    T,
+    C,
+    G,
+    U,
+    N
+}
+
+pub trait WithSequence {
+    type RangeType : IntoIterator<Item = Nuclide>;
+    fn at(&self, offset: usize) -> Nuclide;
+    fn range(&self, from: usize, to: usize) -> Self::RangeType;
+}
