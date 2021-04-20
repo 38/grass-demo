@@ -23,7 +23,17 @@ pub mod high_level_api {
         properties::{Serializable, WithRegion},
         records::{Bed3, Bed4, Bed5},
     };
-    use std::{cell::RefCell, collections::HashMap, fmt::{Debug, Formatter}, fs::File, hash::Hash, io::BufWriter, iter::Take, path::Path, rc::Rc};
+    use std::{
+        cell::RefCell,
+        collections::HashMap,
+        fmt::{Debug, Formatter},
+        fs::File,
+        hash::Hash,
+        io::BufWriter,
+        iter::Take,
+        path::Path,
+        rc::Rc,
+    };
     use std::{io::Write, thread_local};
 
     use self::algorithm::TaggedComponent;
@@ -113,8 +123,9 @@ pub mod high_level_api {
                 iter: RefCell::new(self.into_iter()),
             }
         }
-        fn save<P: AsRef<Path>>(self, path: P) -> std::io::Result<()> 
-        where Self::Item : Serializable
+        fn save<P: AsRef<Path>>(self, path: P) -> std::io::Result<()>
+        where
+            Self::Item: Serializable,
         {
             let mut out = BufWriter::new(File::create(path)?);
             for item in self {
@@ -169,11 +180,11 @@ pub mod high_level_api {
         begins: HashMap<T, u32>,
     }
 
-    impl <I, R, T> Iterator for TaggedMerger<I, T>
+    impl<I, R, T> Iterator for TaggedMerger<I, T>
     where
         I: Iterator<Item = (T, Point<LexicalChromRef, R>)>,
         R: WithRegion<LexicalChromRef> + Clone,
-        T: ToString + Eq + Hash, 
+        T: ToString + Eq + Hash,
     {
         type Item = Bed4<LexicalChromRef>;
         fn next(&mut self) -> Option<Self::Item> {
@@ -186,7 +197,9 @@ pub mod high_level_api {
                 if let Some(&begin) = self.begins.get(&tag) {
                     if !comp.is_open {
                         let core = Bed3 {
-                            chrom: self.chrom.clone().unwrap(), begin, end: pos
+                            chrom: self.chrom.clone().unwrap(),
+                            begin,
+                            end: pos,
                         };
                         let result = Bed4 {
                             core,

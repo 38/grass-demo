@@ -8,8 +8,7 @@ pub use bam::{BAMRecord, BamFile};
 mod vcf;
 
 #[cfg(feature = "hts")]
-pub use vcf::{VcfRecord, VcfFile}; 
-
+pub use vcf::{VcfFile, VcfRecord};
 
 mod bed3;
 pub use bed3::Bed3;

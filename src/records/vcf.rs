@@ -1,9 +1,9 @@
 use crate::properties::WithRegion;
 
 use crate::{ChromName, ChromSet, ChromSetHandle};
-use std::rc::Rc;
-use hts::vcf::{VcfRecord as Vcf, VcfReader};
 pub use hts::vcf::VcfFile;
+use hts::vcf::{VcfReader, VcfRecord as Vcf};
+use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct VcfRecord<'a, C: ChromName> {
@@ -30,7 +30,7 @@ impl<'a, C: ChromName> WithRegion<C> for VcfRecord<'a, C> {
     }
 
     fn end(&self) -> u32 {
-        self.record.end().unwrap_or_else(||  self.record.begin()) as u32
+        self.record.end().unwrap_or_else(|| self.record.begin()) as u32
     }
 
     fn chrom(&self) -> &C {
