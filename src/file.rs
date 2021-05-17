@@ -43,32 +43,20 @@ pub trait LineRecordStreamExt: Read {
 
 impl<R: Read> LineRecordStreamExt for R {}
 
-impl<C: ChromSet, R: Read> Iterator for LineRecordStream<C, R, Bed3<C::RefType>> {
-    type Item = Bed3<C::RefType>;
-    fn next(&mut self) -> Option<Self::Item> {
-        self.buffer.clear();
-        self.reader.read_line(&mut self.buffer).ok()?;
-        let (parsed, _) = Bed3::parse(self.buffer.as_ref())?;
-        Some(parsed.with_chrom_set(&mut self.chrom_set_handle))
-    }
+macro_rules! impl_line_record_stream {
+    ($rec_ty:ident) => {
+        impl<C: ChromSet, R: Read> Iterator for LineRecordStream<C, R, $rec_ty<C::RefType>> {
+            type Item = $rec_ty<C::RefType>;
+            fn next(&mut self) -> Option<Self::Item> {
+                self.buffer.clear();
+                self.reader.read_line(&mut self.buffer).ok()?;
+                let (parsed, _) = $rec_ty::parse(self.buffer.as_ref())?;
+                Some(parsed.with_chrom_set(&mut self.chrom_set_handle))
+            }
+        }
+    };
 }
 
-impl<C: ChromSet, R: Read> Iterator for LineRecordStream<C, R, Bed4<C::RefType>> {
-    type Item = Bed4<C::RefType>;
-    fn next(&mut self) -> Option<Self::Item> {
-        self.buffer.clear();
-        self.reader.read_line(&mut self.buffer).ok()?;
-        let (parsed, _) = Bed4::parse(self.buffer.as_ref())?;
-        Some(parsed.with_chrom_set(&mut self.chrom_set_handle))
-    }
-}
-
-impl<C: ChromSet, R: Read> Iterator for LineRecordStream<C, R, Bed5<C::RefType>> {
-    type Item = Bed5<C::RefType>;
-    fn next(&mut self) -> Option<Self::Item> {
-        self.buffer.clear();
-        self.reader.read_line(&mut self.buffer).ok()?;
-        let (parsed, _) = Bed5::parse(self.buffer.as_ref())?;
-        Some(parsed.with_chrom_set(&mut self.chrom_set_handle))
-    }
-}
+impl_line_record_stream!(Bed3);
+impl_line_record_stream!(Bed4);
+impl_line_record_stream!(Bed5);

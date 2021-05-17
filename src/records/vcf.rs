@@ -26,11 +26,11 @@ impl<'a, C: ChromName + 'a> VcfRecord<'a, C> {
 
 impl<'a, C: ChromName> WithRegion<C> for VcfRecord<'a, C> {
     fn begin(&self) -> u32 {
-        self.record.begin() as u32
+        self.record.begin() as u32 - 1
     }
 
     fn end(&self) -> u32 {
-        self.record.end().unwrap_or_else(|| self.record.begin()) as u32
+        self.record.end().unwrap_or_else(|| self.record.begin()) as u32 - 1
     }
 
     fn chrom(&self) -> &C {

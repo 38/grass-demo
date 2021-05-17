@@ -1,14 +1,14 @@
-#[cfg(feature = "d4-hts")]
+#[cfg(feature = "hts")]
 fn main() -> std::io::Result<()> {
     use std::env::args;
     use std::fs::File;
     use std::io::{BufWriter, Write};
 
-    use gql::algorithm::{AssumeSorted, SortedIntersect};
-    use gql::chromset::{ChromSet, LexicalChromRef, LexicalChromSet};
-    use gql::properties::Serializable;
-    use gql::records::Bed3;
-    use gql::LineRecordStreamExt;
+    use grass::algorithm::{AssumeSorted, SortedIntersect};
+    use grass::chromset::{ChromSet, LexicalChromRef, LexicalChromSet};
+    use grass::properties::Serializable;
+    use grass::records::Bed3;
+    use grass::LineRecordStreamExt;
     let args: Vec<_> = args().skip(1).take(3).collect();
 
     let chromset = LexicalChromSet::new();
@@ -17,9 +17,9 @@ fn main() -> std::io::Result<()> {
         .into_record_iter::<Bed3<LexicalChromRef>, _>(&chromset)
         .assume_sorted();
 
-    let bam_file = gql::records::BamFile::open(&args[1]).unwrap();
+    let bam_file = grass::records::BamFile::open(&args[1]).unwrap();
     let bam_rec_iter =
-        gql::records::BAMRecord::iter_of::<LexicalChromSet>(&bam_file, chromset.get_handle())
+        grass::records::BAMRecord::iter_of::<LexicalChromSet>(&bam_file, chromset.get_handle())
             .assume_sorted();
 
     let mut out_file = BufWriter::new(File::create(&args[2])?);
@@ -33,7 +33,7 @@ fn main() -> std::io::Result<()> {
     Ok(())
 }
 
-#[cfg(not(feature = "d4-hts"))]
+#[cfg(not(feature = "hts"))]
 fn main() -> ! {
     panic!("Please enable d4-hts feature to use HTSLIB support");
 }

@@ -2,9 +2,9 @@ use std::env::args;
 use std::fs::File;
 use std::io::{BufWriter, Result, Write};
 
-use gql::properties::{Serializable, WithRegion};
-use gql::records::Bed3;
-use gql::{chromset::LexicalChromRef, LexicalChromSet, LineRecordStreamExt};
+use grass::properties::{Serializable, WithRegion};
+use grass::records::Bed3;
+use grass::{chromset::LexicalChromRef, LexicalChromSet, LineRecordStreamExt};
 
 fn main() -> Result<()> {
     let args: Vec<_> = args().skip(1).take(3).collect();

@@ -2,12 +2,12 @@ use std::env::args;
 use std::fs::File;
 use std::io::{BufWriter, Result, Write};
 
-use gql::algorithm::SortedIntersect;
-use gql::properties::Serializable;
-use gql::records::Bed3;
-use gql::LexicalChromSet;
-use gql::LineRecordStreamExt;
-use gql::{algorithm::AssumeSorted, chromset::LexicalChromRef};
+use grass::algorithm::SortedIntersect;
+use grass::properties::Serializable;
+use grass::records::Bed3;
+use grass::LexicalChromSet;
+use grass::LineRecordStreamExt;
+use grass::{algorithm::AssumeSorted, chromset::LexicalChromRef};
 
 fn main() -> Result<()> {
     let args: Vec<_> = args().skip(1).take(4).collect();

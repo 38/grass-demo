@@ -2,11 +2,11 @@ use std::env::args;
 use std::fs::File;
 use std::io::Result;
 
-use gql::algorithm::{AssumeSorted, Components};
-use gql::records::Bed3;
-use gql::ChromName;
+use grass::algorithm::{AssumeSorted, Components};
+use grass::records::Bed3;
+use grass::ChromName;
 
-use gql::{chromset::LexicalChromRef, LexicalChromSet, LineRecordStreamExt};
+use grass::{chromset::LexicalChromRef, LexicalChromSet, LineRecordStreamExt};
 
 use itertools::{kmerge, Itertools};
 

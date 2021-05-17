@@ -2,11 +2,11 @@ use std::env::args;
 use std::fs::File;
 use std::io::{BufWriter, Result, Write};
 
-use gql::algorithm::AssumeSorted;
-use gql::algorithm::Components;
-use gql::properties::Serializable;
-use gql::records::Bed3;
-use gql::{chromset::LexicalChromRef, LexicalChromSet, LineRecordStreamExt};
+use grass::algorithm::AssumeSorted;
+use grass::algorithm::Components;
+use grass::properties::Serializable;
+use grass::records::Bed3;
+use grass::{chromset::LexicalChromRef, LexicalChromSet, LineRecordStreamExt};
 
 use itertools::Itertools;
 

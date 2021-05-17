@@ -62,6 +62,10 @@ pub mod high_level_api {
     define_open_helper!(open_sorted_bed4, Bed4);
     define_open_helper!(open_sorted_bed5, Bed5<LexicalChromRef, f64>);
 
+    pub fn get_global_chrom_list() -> &'static std::thread::LocalKey<LexicalChromSet> {
+        &CHROM_NAMES
+    }
+
     pub trait AsBed3: IntoIterator + Sized + 'static
     where
         Self::Item: WithRegion<LexicalChromRef>,
