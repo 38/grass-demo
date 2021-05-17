@@ -1,4 +1,4 @@
-use crate::properties::{WithRegion, WithSequence};
+use crate::properties::{WithRegion};
 
 use crate::{ChromName, ChromSet, ChromSetHandle};
 use hts::alignment::{Alignment, AlignmentFile, AlignmentReader};
