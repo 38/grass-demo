@@ -73,6 +73,51 @@ impl<Chrom: ChromName, A: WithRegion<Chrom>, B: WithRegion<Chrom>> WithRegion<Ch
     }
 }
 
+impl<Chrom: ChromName, A: WithRegion<Chrom>, B: WithRegion<Chrom>, C: WithRegion<Chrom>> WithRegion<Chrom> for (A, B, C) {
+    #[inline(always)]
+    fn begin(&self) -> u32 {
+        ((&self.0, &self.1), &self.2).begin()
+    }
+    #[inline(always)]
+    fn end(&self) -> u32 {
+        ((&self.0, &self.1), &self.2).end()
+    }
+    #[inline(always)]
+    fn chrom(&self) -> &Chrom {
+        self.0.chrom()
+    }
+}
+
+impl<Chrom: ChromName, A: WithRegion<Chrom>, B: WithRegion<Chrom>, C: WithRegion<Chrom>, D: WithRegion<Chrom>> WithRegion<Chrom> for (A, B, C, D) {
+    #[inline(always)]
+    fn begin(&self) -> u32 {
+        ((&self.0, &self.1, &self.2), &self.3).begin()
+    }
+    #[inline(always)]
+    fn end(&self) -> u32 {
+        ((&self.0, &self.1, &self.2), &self.3).end()
+    }
+    #[inline(always)]
+    fn chrom(&self) -> &Chrom {
+        self.0.chrom()
+    }
+}
+
+impl<Chrom: ChromName, A: WithRegion<Chrom>, B: WithRegion<Chrom>, C: WithRegion<Chrom>, D: WithRegion<Chrom>, E: WithRegion<Chrom>> WithRegion<Chrom> for (A, B, C, D, E) {
+    #[inline(always)]
+    fn begin(&self) -> u32 {
+        ((&self.0, &self.1, &self.2, &self.3), &self.4).begin()
+    }
+    #[inline(always)]
+    fn end(&self) -> u32 {
+        ((&self.0, &self.1, &self.2, &self.3), &self.4).end()
+    }
+    #[inline(always)]
+    fn chrom(&self) -> &Chrom {
+        self.0.chrom()
+    }
+}
+
 pub trait WithName {
     fn name(&self) -> &str;
 }

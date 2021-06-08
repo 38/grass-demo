@@ -1,4 +1,4 @@
-use crate::properties::{WithRegion};
+use crate::properties::WithRegion;
 
 use crate::{ChromName, ChromSet, ChromSetHandle};
 use hts::alignment::{Alignment, AlignmentFile, AlignmentReader};
@@ -48,4 +48,3 @@ impl<'a, C: ChromName> WithRegion<C> for BAMRecord<'a, C> {
         &self.chrom_name
     }
 }
-
