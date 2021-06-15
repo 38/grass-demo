@@ -44,11 +44,18 @@ grass::grass_query! {
 
 - Filtering
 
+You can use `where` to filter the records. 
+The filtering condition you can use `_1`,.... for the first, second, third intervals and `_0` for the overlapped intervals.
+
 For example, filter out all the intervals that is shorter than 20 bases and save the result to file.
 
 ```rust
 grass::grass_query! {
 	let first_file = open("a.bed");
-	first_file | where($0.length() > 20) | save("filtering-result.bed");
+	first_file | where(_0.length() > 20) | save("filtering-result.bed");
 }
 ```
+
+- 
+
+
