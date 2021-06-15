@@ -19,6 +19,33 @@ grass::grass_query! {
 }
 ```
 
+- Let binding
+
+You can bind any expression to variables, for example, you can use `open` to load any file on disk,
+`intersect` to get a iterator of intersections, it also can be bind to a variable.
+
+For instance:
+
+```rust
+grass::grass_query! {
+	let first_file = open("a.bed");
+	let second_file = open("b.bed");
+	let intersected = intersect(first_file, second_file);
+}
+```
+
+- Calling Method
+
+In the GRASS DSL, you can call any assocated method / trait method defined by GRASS. 
+For example, you can cast a BAM file to a BED file by calling `as_bed3` trait method.
+
+```rust
+grass::grass_query!{
+	let input_file = open("path/to/file.bam");
+	input_file | as_bed3() | show_all();
+}
+```
+
 - Open a genomic record file
 
 ```rust
