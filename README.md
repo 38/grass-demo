@@ -56,6 +56,23 @@ grass::grass_query! {
 }
 ```
 
-- 
+- Mixing GRASS DSL and Rust code
 
+You can use `grass::grass_query_block` macro for this purpose. 
 
+```rust
+use grass::grass_query_block;
+fn main() {
+	grass_query_block! {
+		let a = open("a.bed");
+		let b = open("b.bed");
+		let result = intersect(a, b);
+	}
+
+	use grass:properties::*;
+
+	for item in result {
+		println!("{} {} {}", item.chrom(), item.start(), item.end());
+	}
+}
+```
