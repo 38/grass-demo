@@ -1,0 +1,38 @@
+#!/bin/bash
+set -e
+BUFFER_ROOT=/tmp/grass-cli-temp
+CARGO=cargo
+if [ ! -e ${BUFFER_ROOT} ]
+then
+	${CARGO} init ${BUFFER_ROOT}
+fi
+
+which cargo-add &> /dev/null || ${CARGO} install cargo-edit
+
+call-cargo() {
+	pushd ${BUFFER_ROOT} &> /dev/null
+	cargo $@
+	popd &> /dev/null
+}
+
+call-cargo add grass --git https://github.com/38/grass-demo.git &> /dev/null
+
+idx=97
+code=$1
+
+shift
+
+echo "grass::grass_query! {" > ${BUFFER_ROOT}/src/main.rs
+
+while [ $# != 0 ] 
+do
+	char=$(printf "\x$(printf "%x" ${idx})")
+	idx=$((${idx} + 1))
+	echo "let ${char} = open(r\"$(readlink -f $1)\");" >> ${BUFFER_ROOT}/src/main.rs
+	shift
+done
+
+echo ${code} >> ${BUFFER_ROOT}/src/main.rs
+echo "}" >> ${BUFFER_ROOT}/src/main.rs
+
+call-cargo build --release &>/dev/null && exec ${BUFFER_ROOT}/target/release/grass-cli-temp
