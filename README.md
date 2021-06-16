@@ -96,10 +96,10 @@ fn main() {
 		let result = intersect(a, b);
 	}
 
-	use grass:properties::*;
+	use grass::properties::*;
 
 	for item in result {
-		println!("{} {} {}", item.chrom(), item.start(), item.end());
+		println!("{} {} {}", item.chrom(), item.begin(), item.end());
 	}
 }
 ```
