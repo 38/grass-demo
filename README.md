@@ -99,7 +99,7 @@ fn main() {
 	use grass::properties::*;
 
 	for item in result {
-		println!("{} {} {}", item.chrom(), item.begin(), item.end());
+		println!("{:?} {} {}", item.chrom(), item.begin(), item.end());
 	}
 }
 ```
