@@ -10,21 +10,11 @@ pub trait Serializable {
     fn dump<W: Write>(&self, fp: W) -> Result<()>;
 }
 
-pub trait WithRegion<Chrom: ChromName> {
+pub trait WithRegionCore<Chrom: ChromName> {
     fn begin(&self) -> u32;
     fn end(&self) -> u32;
 
     fn chrom(&self) -> &Chrom;
-
-    #[inline(always)]
-    fn overlaps(&self, b: &impl WithRegion<Chrom>) -> bool {
-        let a = self;
-        if a.chrom() != b.chrom() {
-            return false;
-        }
-
-        !(a.end() <= b.begin() || b.end() <= a.begin())
-    }
 
     #[inline(always)]
     fn empty(&self) -> bool {
@@ -36,7 +26,21 @@ pub trait WithRegion<Chrom: ChromName> {
     }
 }
 
-impl<'a, Chrom: ChromName, T: WithRegion<Chrom>> WithRegion<Chrom> for &'a T {
+pub trait WithRegion<Chrom: ChromName>: WithRegionCore<Chrom> {
+    #[inline(always)]
+    fn overlaps(&self, b: &impl WithRegion<Chrom>) -> bool {
+        let a = self;
+        if a.chrom() != b.chrom() {
+            return false;
+        }
+
+        !(a.end() <= b.begin() || b.end() <= a.begin())
+    }
+}
+
+impl<C: ChromName, T: WithRegionCore<C>> WithRegion<C> for T {}
+
+impl<'a, Chrom: ChromName, T: WithRegion<Chrom>> WithRegionCore<Chrom> for &'a T {
     fn begin(&self) -> u32 {
         T::begin(*self)
     }
@@ -47,8 +51,9 @@ impl<'a, Chrom: ChromName, T: WithRegion<Chrom>> WithRegion<Chrom> for &'a T {
         T::chrom(*self)
     }
 }
-
-impl<Chrom: ChromName, A: WithRegion<Chrom>, B: WithRegion<Chrom>> WithRegion<Chrom> for (A, B) {
+impl<Chrom: ChromName, A: WithRegion<Chrom>, B: WithRegion<Chrom>> WithRegionCore<Chrom>
+    for (A, B)
+{
     #[inline(always)]
     fn begin(&self) -> u32 {
         if self.0.overlaps(&self.1) {
@@ -73,50 +78,64 @@ impl<Chrom: ChromName, A: WithRegion<Chrom>, B: WithRegion<Chrom>> WithRegion<Ch
     }
 }
 
-impl<Chrom: ChromName, A: WithRegion<Chrom>, B: WithRegion<Chrom>, C: WithRegion<Chrom>> WithRegion<Chrom> for (A, B, C) {
-    #[inline(always)]
-    fn begin(&self) -> u32 {
-        ((&self.0, &self.1), &self.2).begin()
-    }
-    #[inline(always)]
-    fn end(&self) -> u32 {
-        ((&self.0, &self.1), &self.2).end()
-    }
-    #[inline(always)]
-    fn chrom(&self) -> &Chrom {
-        self.0.chrom()
+pub trait Intersection<Chrom: ChromName>: WithRegionCore<Chrom> {
+    fn original(&self, idx: usize) -> &dyn WithRegionCore<Chrom>;
+    fn size(&self) -> usize;
+}
+
+macro_rules! impl_intersection_trait {
+    ($($t_name: ident),* => $($idx: tt),*) => {
+        impl <Chrom: ChromName, $($t_name: WithRegion<Chrom>),*> Intersection<Chrom> for ($($t_name),*) {
+            fn original(&self, idx: usize) -> &dyn WithRegionCore<Chrom> {
+                match idx {
+                    $($idx => &self.$idx,)*
+                    _ => panic!("Index out of range")
+                }
+            }
+            fn size(&self) -> usize {
+                $(let _ret = $idx;)*
+                _ret + 1
+            }
+        }
     }
 }
 
-impl<Chrom: ChromName, A: WithRegion<Chrom>, B: WithRegion<Chrom>, C: WithRegion<Chrom>, D: WithRegion<Chrom>> WithRegion<Chrom> for (A, B, C, D) {
-    #[inline(always)]
-    fn begin(&self) -> u32 {
-        ((&self.0, &self.1, &self.2), &self.3).begin()
-    }
-    #[inline(always)]
-    fn end(&self) -> u32 {
-        ((&self.0, &self.1, &self.2), &self.3).end()
-    }
-    #[inline(always)]
-    fn chrom(&self) -> &Chrom {
-        self.0.chrom()
-    }
+impl_intersection_trait!(A, B => 0, 1);
+
+macro_rules! impl_with_region_for_tuple {
+    (($($t_var:ident),*), ($($head:tt),*), $tail:tt) => {
+       impl <Chrom: ChromName, $($t_var: WithRegion<Chrom>),*> WithRegionCore<Chrom> for ($($t_var),*) {
+           #[inline(always)]
+           fn begin(&self) -> u32 {
+               if ($(&self . $head,)*).overlaps(&self.$tail) {
+                   ($(&self . $head,)*).begin().max(self.$tail.begin())
+               } else {
+                   0
+               }
+           }
+           #[inline(always)]
+           fn end(&self) -> u32 {
+               if ($(&self . $head,)*).overlaps(&self.$tail) {
+                   ($(&self . $head,)*).end().min(self.$tail.end())
+               } else {
+                   0
+               }
+           }
+           #[inline(always)]
+           fn chrom(&self) -> &Chrom {
+               self.0.chrom()
+           }
+       }
+       impl_intersection_trait!($($t_var),* => $($head,)* $tail);
+    };
 }
 
-impl<Chrom: ChromName, A: WithRegion<Chrom>, B: WithRegion<Chrom>, C: WithRegion<Chrom>, D: WithRegion<Chrom>, E: WithRegion<Chrom>> WithRegion<Chrom> for (A, B, C, D, E) {
-    #[inline(always)]
-    fn begin(&self) -> u32 {
-        ((&self.0, &self.1, &self.2, &self.3), &self.4).begin()
-    }
-    #[inline(always)]
-    fn end(&self) -> u32 {
-        ((&self.0, &self.1, &self.2, &self.3), &self.4).end()
-    }
-    #[inline(always)]
-    fn chrom(&self) -> &Chrom {
-        self.0.chrom()
-    }
-}
+impl_with_region_for_tuple!((A, B, C), (0, 1), 2);
+impl_with_region_for_tuple!((A, B, C, D), (0, 1, 2), 3);
+impl_with_region_for_tuple!((A, B, C, D, E), (0, 1, 2, 3), 4);
+impl_with_region_for_tuple!((A, B, C, D, E, F), (0, 1, 2, 3, 4), 5);
+impl_with_region_for_tuple!((A, B, C, D, E, F, G), (0, 1, 2, 3, 4, 5), 6);
+impl_with_region_for_tuple!((A, B, C, D, E, F, G, H), (0, 1, 2, 3, 4, 5, 6), 7);
 
 pub trait WithName {
     fn name(&self) -> &str;

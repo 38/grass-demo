@@ -1,7 +1,13 @@
 use super::CodeGeneratorContext;
-use std::fmt::{Debug, Formatter, Result as FmtResult};
 use quote::quote;
-use syn::{Expr, Ident, LitInt, Result, Token, parenthesized, parse::{Parse, ParseStream}, punctuated::Punctuated, visit_mut::VisitMut};
+use std::fmt::{Debug, Formatter, Result as FmtResult};
+use syn::{
+    parenthesized,
+    parse::{Parse, ParseStream},
+    punctuated::Punctuated,
+    visit_mut::VisitMut,
+    Expr, Ident, LitInt, Result, Token,
+};
 
 pub(crate) enum Operator {
     Where(Expr),
@@ -22,20 +28,29 @@ fn rewrite_field_access(node: &mut Expr) -> bool {
         Expr::Path(path_expr) => {
             if let Some(ident) = path_expr.path.get_ident() {
                 let ident_str = ident.to_string();
-                if !ident_str.starts_with('_') || !ident_str[1..].chars().all(|x| x.is_digit(10))  || ident_str == "_0" {
+                if !ident_str.starts_with('_')
+                    || !ident_str[1..].chars().all(|x| x.is_digit(10))
+                    || ident_str == "_0"
+                {
                     return false;
                 }
-                LitInt::new(&format!("{}", ident_str[1..].parse::<usize>().unwrap() - 1), ident.span())
+                LitInt::new(
+                    &format!("{}", ident_str[1..].parse::<usize>().unwrap() - 1),
+                    ident.span(),
+                )
             } else {
                 return false;
             }
         }
-        _ => { return false; }
+        _ => {
+            return false;
+        }
     };
 
-    let new_expr : Expr = syn::parse2(quote! {
+    let new_expr: Expr = syn::parse2(quote! {
         _0 . #id
-    }).unwrap();
+    })
+    .unwrap();
 
     *node = new_expr;
     true
@@ -72,9 +87,9 @@ impl Operator {
                 let mut expr = expr.clone();
                 ClosureRewriter.visit_expr_mut(&mut expr);
                 let code = quote! {
-                    let #id = #upstream.filter(|_0| { 
+                    let #id = #upstream.filter(|_0| {
                         use grass::properties::*;
-                        #expr 
+                        #expr
                     });
                 };
                 ctx.append(code);

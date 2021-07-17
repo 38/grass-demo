@@ -1,4 +1,4 @@
-use crate::properties::WithRegion;
+use crate::properties::WithRegionCore;
 
 use crate::{ChromName, ChromSet, ChromSetHandle};
 use hts::alignment::{Alignment, AlignmentFile, AlignmentReader};
@@ -35,7 +35,7 @@ impl<'a, C: ChromName + 'a> BAMRecord<'a, C> {
     }
 }
 
-impl<'a, C: ChromName> WithRegion<C> for BAMRecord<'a, C> {
+impl<'a, C: ChromName> WithRegionCore<C> for BAMRecord<'a, C> {
     fn begin(&self) -> u32 {
         self.record.ref_begin() as u32
     }

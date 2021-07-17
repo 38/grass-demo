@@ -7,7 +7,7 @@ use crate::ql::{CodeGenerator, CodeGeneratorContext};
 
 mod ql;
 
-fn grass_query_impl(query_body : ql::QueryBody) -> (TokenStream2, Option<Ident>) {
+fn grass_query_impl(query_body: ql::QueryBody) -> (TokenStream2, Option<Ident>) {
     let result_ident;
     let code_fragments = {
         let mut ctx = CodeGeneratorContext::default();
@@ -15,7 +15,7 @@ fn grass_query_impl(query_body : ql::QueryBody) -> (TokenStream2, Option<Ident>)
             Ok(ident) => {
                 result_ident = ident;
                 ctx.into_code_vec()
-            },
+            }
             Err(e) => return (e.into_compile_error().into(), None),
         }
     };
@@ -52,5 +52,6 @@ pub fn grass_query(input: TokenStream) -> TokenStream {
 
             #display_code
         }
-    }).into()
+    })
+    .into()
 }

@@ -124,10 +124,13 @@ impl CodeGenerator for QueryExpr {
                     let id = ctx.fresh_id();
 
                     let mut flatten_closure_arg = quote! { _1 };
-                    let mut flatten_closure_body = vec![ Ident::new("_1", first.span()) ];
+                    let mut flatten_closure_body = vec![Ident::new("_1", first.span())];
 
                     for idx in 2..=vars.len() {
-                        let new_ident = Ident::new(&format!("_{}", idx), vars[idx - 1].as_ref().unwrap().as_ref().unwrap().span());
+                        let new_ident = Ident::new(
+                            &format!("_{}", idx),
+                            vars[idx - 1].as_ref().unwrap().as_ref().unwrap().span(),
+                        );
                         flatten_closure_arg = quote! {
                             (#flatten_closure_arg, #new_ident)
                         };
@@ -137,7 +140,7 @@ impl CodeGenerator for QueryExpr {
                     let code = quote! {
                         let mut #id = {
                             use grass::algorithm::SortedIntersect;
-                            #first #(.sorted_intersect(#rem))* 
+                            #first #(.sorted_intersect(#rem))*
                             .map( |#flatten_closure_arg| (#(#flatten_closure_body),*))
                         };
                     };

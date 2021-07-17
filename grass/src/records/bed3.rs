@@ -1,11 +1,11 @@
 use crate::{
     chromset::LexicalChromRef,
-    properties::{Parsable, Serializable, WithName, WithRegion, WithScore, WithStrand},
+    properties::{Parsable, Serializable, WithName, WithRegionCore, WithScore, WithStrand},
 };
 use crate::{ChromName, ChromSetHandle, WithChromSet};
 use std::io::{Result, Write};
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct Bed3<T: ChromName = LexicalChromRef> {
     pub begin: u32,
     pub end: u32,
@@ -56,7 +56,7 @@ impl<'a> Parsable<'a> for Bed3<&'a str> {
 }
 
 impl<C: ChromName + Clone> Bed3<C> {
-    pub fn new<T: WithRegion<C>>(region: T) -> Self {
+    pub fn new<T: WithRegionCore<C>>(region: T) -> Self {
         Self {
             begin: region.begin(),
             end: region.end(),
@@ -75,7 +75,7 @@ impl<T: ChromName> Serializable for Bed3<T> {
     }
 }
 
-impl<T: ChromName> WithRegion<T> for Bed3<T> {
+impl<T: ChromName> WithRegionCore<T> for Bed3<T> {
     fn begin(&self) -> u32 {
         self.begin
     }

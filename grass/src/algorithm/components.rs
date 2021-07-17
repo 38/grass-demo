@@ -9,7 +9,10 @@ use std::{
     hash::Hash,
 };
 
-use crate::{properties::WithRegion, ChromName};
+use crate::{
+    properties::{WithRegion, WithRegionCore},
+    ChromName,
+};
 
 pub struct Point<C: ChromName, T: WithRegion<C>> {
     pub is_open: bool,

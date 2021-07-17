@@ -1,12 +1,4 @@
-use std::{
-    borrow::{Borrow, Cow},
-    cell::UnsafeCell,
-    cmp::Ordering,
-    collections::HashMap,
-    fmt::{Debug, Formatter, Result as FmtResult},
-    io::Write,
-    sync::Arc,
-};
+use std::{borrow::{Borrow, Cow}, cell::UnsafeCell, cmp::Ordering, collections::HashMap, fmt::{Debug, Display, Formatter, Result as FmtResult}, io::Write, sync::Arc};
 
 pub trait WithChromSet<H: ChromSetHandle> {
     type Result;
@@ -94,8 +86,15 @@ pub struct LexicalChromRef {
 
 impl Debug for LexicalChromRef {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-        let value = self.to_string();
+        let value = ChromName::to_string(self);
         write!(f, "{}(Id={})", value, self.idx)
+    }
+}
+
+impl Display for LexicalChromRef {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        let value = ChromName::to_string(self);
+        write!(f, "{}", value)
     }
 }
 

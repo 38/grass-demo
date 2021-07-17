@@ -1,7 +1,7 @@
 use super::Bed3;
 use crate::{
     chromset::LexicalChromRef,
-    properties::{Parsable, Serializable, WithName, WithRegion, WithScore, WithStrand},
+    properties::{Parsable, Serializable, WithName, WithRegionCore, WithScore, WithStrand},
     ChromName, ChromSetHandle, WithChromSet,
 };
 
@@ -41,7 +41,7 @@ impl<'a> Parsable<'a> for Bed4<&'a str> {
     }
 }
 
-impl<T: ChromName> WithRegion<T> for Bed4<T> {
+impl<T: ChromName> WithRegionCore<T> for Bed4<T> {
     fn begin(&self) -> u32 {
         self.core.begin()
     }

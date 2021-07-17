@@ -4,7 +4,7 @@ use std::io::{Result, Write};
 
 use crate::{
     chromset::LexicalChromRef,
-    properties::{Parsable, Serializable, WithName, WithRegion, WithScore, WithStrand},
+    properties::{Parsable, Serializable, WithName, WithRegionCore, WithScore, WithStrand},
     ChromName, ChromSetHandle, WithChromSet,
 };
 
@@ -36,7 +36,7 @@ impl<'a, N: Num> Parsable<'a> for Bed5<&'a str, N> {
     }
 }
 
-impl<T: ChromName, N: Num> WithRegion<T> for Bed5<T, N> {
+impl<T: ChromName, N: Num> WithRegionCore<T> for Bed5<T, N> {
     fn begin(&self) -> u32 {
         self.core.begin()
     }

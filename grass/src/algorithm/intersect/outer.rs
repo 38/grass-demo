@@ -1,6 +1,9 @@
 use super::heap::RegionHeap;
 use super::Sorted;
-use crate::{properties::WithRegion, ChromName};
+use crate::{
+    properties::{WithRegion, WithRegionCore},
+    ChromName,
+};
 
 pub struct LeftOuterJoinIter<C, IA, IB>
 where

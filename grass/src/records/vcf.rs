@@ -1,4 +1,4 @@
-use crate::properties::WithRegion;
+use crate::properties::WithRegionCore;
 
 use crate::{ChromName, ChromSet, ChromSetHandle};
 pub use hts::vcf::VcfFile;
@@ -24,7 +24,7 @@ impl<'a, C: ChromName + 'a> VcfRecord<'a, C> {
     }
 }
 
-impl<'a, C: ChromName> WithRegion<C> for VcfRecord<'a, C> {
+impl<'a, C: ChromName> WithRegionCore<C> for VcfRecord<'a, C> {
     fn begin(&self) -> u32 {
         self.record.begin() as u32 - 1
     }

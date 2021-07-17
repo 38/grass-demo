@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use super::heap::RegionHeap;
 use crate::algorithm::Sorted;
-use crate::properties::WithRegion;
+use crate::properties::{WithRegion, WithRegionCore};
 use crate::ChromName;
 
 pub(super) struct Context<C: ChromName, I: Iterator + Sorted>
