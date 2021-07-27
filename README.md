@@ -42,7 +42,7 @@ For example, you can cast a BAM file to a BED file by calling `as_bed3` trait me
 ```rust
 grass::grass_query!{
 	let input_file = open("path/to/file.bam");
-	input_file | as_bed3() | show_all();
+	input_file | as_bed3() | cat();
 }
 ```
 
