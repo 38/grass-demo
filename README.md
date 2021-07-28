@@ -10,7 +10,7 @@ it allows user to write simple query language which turns to be Rust code when i
 
 ### Basic Syntax
 
-To use the GRASS Query DSL, you can simply use the marco `grass::grass_query`. 
+To use the GRASS Query DSL, you can simply use the macro `grass::grass_query`. 
 For example, you can write a rust source code:
 
 ```rust
