@@ -19,7 +19,7 @@ grass::grass_query! {
 }
 ```
 
-- Let binding
+## Let binding
 
 You can bind any expression to variables, for example, you can use `open` to load any file on disk,
 `intersect` to get a iterator of intersections, it also can be bind to a variable.
@@ -34,7 +34,7 @@ grass::grass_query! {
 }
 ```
 
-- Calling Method
+## Calling Method
 
 In the GRASS DSL, you can call any assocated method / trait method defined by GRASS. 
 For example, you can cast a BAM file to a BED file by calling `as_bed3` trait method.
@@ -46,7 +46,7 @@ grass::grass_query!{
 }
 ```
 
-- Open a genomic record file
+## Open a genomic record file
 
 ```rust
 // grass-query-example.rs
@@ -57,7 +57,7 @@ grass::grass_query!{
 
 note that the query DSL will automatically detect the file format and generate properate file format handling code.
 
-- Intersect multiple files
+## Intersect multiple files
 
 For example, intersect two input bed file and save the result as a bed3 file.
 
@@ -69,9 +69,9 @@ grass::grass_query! {
 }
 ```
 
-- Filtering
+## Filtering
 
-You can use `where` to filter the records. 
+### You can use `where` to filter the records. 
 The filtering condition you can use `_1`,.... for the first, second, third intervals and `_0` for the overlapped intervals.
 
 For example, filter out all the intervals that is shorter than 20 bases and save the result to file.
@@ -83,7 +83,7 @@ grass::grass_query! {
 }
 ```
 
-- Mixing GRASS DSL and Rust code
+## Mixing GRASS DSL and Rust code
 
 You can use `grass::grass_query_block` macro for this purpose. 
 
