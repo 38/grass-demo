@@ -5,12 +5,14 @@ use std::{
     io::{BufWriter, Write},
     iter::Take,
     marker::PhantomData,
-    ops::Add,
+    ops::{Add, Range},
     path::Path,
 };
 
+use num::iter::RangeFrom;
+
 use crate::{
-    properties::{Intersection, Serializable},
+    properties::{Intersection, Serializable, WithRegionCore},
     ChromName,
 };
 
@@ -74,16 +76,53 @@ pub trait PrintOpt {
     fn append<W: Write, C: ChromName, D: Intersection<C>>(
         &self,
         intersection: &D,
+        delim: &str,
         mut target: W,
     ) -> std::io::Result<()> {
-        target.write_all(b"\t")?;
-        self.print(intersection, target)
+        target.write_all(delim.as_bytes())?;
+        self.print(intersection, delim, target)
     }
     fn print<W: Write, C: ChromName, D: Intersection<C>>(
         &self,
         intersection: &D,
+        delim: &str,
         target: W,
     ) -> std::io::Result<()>;
+
+    fn delim<'a>(self, delim: &'a str) -> DeliminatorOverride<'a, Self>
+    where
+        Self: Sized,
+    {
+        DeliminatorOverride(self, delim)
+    }
+}
+
+pub struct DeliminatorOverride<'a, T>(T, &'a str);
+
+impl<'a, T: PrintOpt> PrintOpt for DeliminatorOverride<'a, T> {
+    fn print<W: Write, C: ChromName, D: Intersection<C>>(
+        &self,
+        intersection: &D,
+        _: &str,
+        target: W,
+    ) -> std::io::Result<()> {
+        self.0.print(intersection, self.1, target)
+    }
+}
+
+fn write_interval_impl<C: ChromName, D: WithRegionCore<C>, W: Write>(
+    interval: &D,
+    delim: &str,
+    mut target: W,
+) -> std::io::Result<()> {
+    write!(
+        target,
+        "{chrom}{delim}{begin}{delim}{end}",
+        chrom = interval.chrom().to_string(),
+        begin = interval.begin(),
+        end = interval.end(),
+        delim = delim,
+    )
 }
 
 pub struct Overlap;
@@ -92,15 +131,10 @@ impl PrintOpt for Overlap {
     fn print<W: Write, C: ChromName, D: Intersection<C>>(
         &self,
         interval: &D,
-        mut target: W,
+        delim: &str,
+        target: W,
     ) -> std::io::Result<()> {
-        write!(
-            target,
-            "{}\t{}\t{}",
-            interval.chrom().to_string(),
-            interval.begin(),
-            interval.end()
-        )
+        write_interval_impl(interval, delim, target)
     }
 }
 impl<C: PrintOpt> Add<C> for Overlap {
@@ -110,32 +144,59 @@ impl<C: PrintOpt> Add<C> for Overlap {
     }
 }
 
-pub struct Original(pub usize);
+pub struct Original<T>(pub T);
 
-impl PrintOpt for Original {
+impl PrintOpt for Original<usize> {
     fn print<W: Write, C: ChromName, D: Intersection<C>>(
         &self,
         intersection: &D,
-        mut target: W,
+        delim: &str,
+        target: W,
     ) -> std::io::Result<()> {
         if self.0 < intersection.size() {
-            let interval = intersection.original(self.0);
-            write!(
-                target,
-                "{}\t{}\t{}",
-                interval.chrom().to_string(),
-                interval.begin(),
-                interval.end()
-            )
+            let interval = intersection.original(self.0).to_bed3();
+            write_interval_impl(&interval, delim, target)
         } else {
             Ok(())
         }
     }
 }
-impl<C: PrintOpt> Add<C> for Original {
+impl<C: PrintOpt, T> Add<C> for Original<T>
+where
+    Self: PrintOpt,
+{
     type Output = PrintOptPair<Self, C>;
     fn add(self, rhs: C) -> Self::Output {
         PrintOptPair(self, rhs)
+    }
+}
+
+pub trait OverlapRef: Iterator<Item = usize> + Clone {}
+
+impl OverlapRef for Range<usize> {}
+impl OverlapRef for RangeFrom<usize> {}
+
+impl<T: OverlapRef> PrintOpt for Original<T> {
+    fn print<W: Write, C: ChromName, D: Intersection<C>>(
+        &self,
+        intersection: &D,
+        delim: &str,
+        mut target: W,
+    ) -> std::io::Result<()> {
+        let mut first = true;
+        for idx in self.0.clone() {
+            if idx < intersection.size() {
+                let interval = intersection.original(idx).to_bed3();
+                if !first {
+                    target.write_all(delim.as_bytes())?;
+                }
+                write_interval_impl(&interval, delim, &mut target)?;
+            } else {
+                break;
+            }
+            first = false;
+        }
+        Ok(())
     }
 }
 
@@ -145,6 +206,7 @@ impl<'a> PrintOpt for S<'a> {
     fn print<W: Write, C: ChromName, D: Intersection<C>>(
         &self,
         _: &D,
+        _: &str,
         mut target: W,
     ) -> std::io::Result<()> {
         write!(target, "{}", self.0)
@@ -163,6 +225,7 @@ impl PrintOpt for Fraction {
     fn print<W: Write, C: ChromName, D: Intersection<C>>(
         &self,
         intersection: &D,
+        _delim: &str,
         mut target: W,
     ) -> std::io::Result<()> {
         if self.0 < intersection.size() {
@@ -187,10 +250,11 @@ impl<A: PrintOpt, B: PrintOpt> PrintOpt for PrintOptPair<A, B> {
     fn print<W: Write, C: ChromName, D: Intersection<C>>(
         &self,
         data: &D,
+        delim: &str,
         mut target: W,
     ) -> std::io::Result<()> {
-        self.0.print(data, &mut target)?;
-        self.1.append(data, target)
+        self.0.print(data, delim, &mut target)?;
+        self.1.append(data, delim, target)
     }
 }
 
@@ -220,7 +284,7 @@ where
         let mut buf = Vec::new();
         while let Some(item) = iter_ref.next() {
             buf.clear();
-            self.config.print(&item, &mut buf).unwrap();
+            self.config.print(&item, "\t", &mut buf).unwrap();
             write!(f, "{}\n", String::from_utf8_lossy(&buf))?;
             count += 1;
         }

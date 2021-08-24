@@ -1,4 +1,4 @@
-use std::{io::Write, thread_local};
+use std::{io::Write, marker::PhantomData, thread_local};
 
 use crate::{
     algorithm::Point,
@@ -6,6 +6,8 @@ use crate::{
     properties::{Serializable, WithRegion},
     records::Bed3,
 };
+
+use self::properties::Intersection;
 
 pub use super::*;
 
@@ -20,6 +22,9 @@ pub use merge::*;
 
 mod depth;
 pub use depth::*;
+
+mod subtract;
+pub use subtract::*;
 
 // TODO: because we use unsafe cell, so that we actually need a mutex inside the chromset for
 // thread safety. But we currently doesn't have any. as long as we are currently single
@@ -54,3 +59,33 @@ impl<T: WithRegion<LexicalChromRef> + Serializable> Serializable for Point<Lexic
         self.value.dump(&mut fp)
     }
 }
+
+pub struct Projection<T, C>(T, usize, PhantomData<C>);
+impl<T, C> Iterator for Projection<T, C>
+where
+    T: Iterator,
+    T::Item: Intersection<C>,
+    C: ChromName,
+{
+    type Item = Bed3<C>;
+    fn next(&mut self) -> Option<Self::Item> {
+        while let Some(next) = self.0.next() {
+            if self.1 < next.size() {
+                let prj = next.original(self.1);
+                return Some(prj.to_bed3());
+            }
+        }
+        None
+    }
+}
+
+pub trait Project: IntoIterator + Sized {
+    fn project<C: ChromName>(self, n: usize) -> Projection<Self::IntoIter, C>
+    where
+        Self::Item: Intersection<C>,
+    {
+        Projection(self.into_iter(), n, Default::default())
+    }
+}
+
+impl<T: IntoIterator> Project for T {}

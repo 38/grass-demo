@@ -1,5 +1,5 @@
 mod intersect;
-pub use intersect::SortedIntersect;
+pub use intersect::{SortedIntersect, SortedIntersectIter};
 
 mod markers;
 pub use markers::{AssumeSorted, AssumingSortedIter, Sorted};

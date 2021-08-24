@@ -5,7 +5,9 @@ mod outer;
 use crate::properties::WithRegion;
 use crate::{algorithm::markers::Sorted, ChromName};
 
-use inner::{Context, SortedIntersectIter, State};
+use inner::{Context, State};
+
+pub use inner::SortedIntersectIter;
 
 pub trait SortedIntersect: Iterator + Sorted + Sized {
     fn sorted_intersect<

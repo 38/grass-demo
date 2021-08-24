@@ -1,4 +1,12 @@
-use std::{borrow::{Borrow, Cow}, cell::UnsafeCell, cmp::Ordering, collections::HashMap, fmt::{Debug, Display, Formatter, Result as FmtResult}, io::Write, sync::Arc};
+use std::{
+    borrow::{Borrow, Cow},
+    cell::UnsafeCell,
+    cmp::Ordering,
+    collections::HashMap,
+    fmt::{Debug, Display, Formatter, Result as FmtResult},
+    io::Write,
+    sync::Arc,
+};
 
 pub trait WithChromSet<H: ChromSetHandle> {
     type Result;

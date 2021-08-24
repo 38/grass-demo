@@ -1,4 +1,4 @@
-use crate::ChromName;
+use crate::{records::Bed3, ChromName};
 use num::Num;
 use std::io::{Result, Write};
 
@@ -23,6 +23,15 @@ pub trait WithRegionCore<Chrom: ChromName> {
     #[inline(always)]
     fn length(&self) -> u32 {
         self.end().max(self.begin()) - self.begin()
+    }
+
+    #[inline(always)]
+    fn to_bed3(&self) -> Bed3<Chrom> {
+        Bed3 {
+            chrom: self.chrom().clone(),
+            begin: self.begin(),
+            end: self.end(),
+        }
     }
 }
 

@@ -5,7 +5,7 @@ use crate::{
 use crate::{ChromName, ChromSetHandle, WithChromSet};
 use std::io::{Result, Write};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct Bed3<T: ChromName = LexicalChromRef> {
     pub begin: u32,
     pub end: u32,
