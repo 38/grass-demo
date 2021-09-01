@@ -40,6 +40,7 @@ impl Parse for OpenArgument {
 pub(crate) enum QueryExpr {
     Open(OpenArgument),
     Intersect(Vec<QueryExpr>),
+    LeftOutterIntersect(Vec<QueryExpr>),
     VarRef(Ident),
     OpChain((Box<QueryExpr>, Operator)),
 }
@@ -59,6 +60,12 @@ impl QueryExpr {
                     let _ = parenthesized!(arguments in input);
                     let parsed = Punctuated::<QueryExpr, Token![,]>::parse_terminated(&arguments)?;
                     return Ok(QueryExpr::Intersect(parsed.into_iter().collect()));
+                }
+                "left_outter_intersect" => {
+                    let arguments;
+                    let _ = parenthesized!(arguments in input);
+                    let parsed = Punctuated::<QueryExpr, Token![,]>::parse_terminated(&arguments)?;
+                    return Ok(QueryExpr::LeftOutterIntersect(parsed.into_iter().collect()));
                 }
                 _ => {
                     return Ok(QueryExpr::VarRef(first_ident));
@@ -105,6 +112,22 @@ impl CodeGenerator for QueryExpr {
                 };
                 ctx.append(code);
                 Ok(Some(id))
+            }
+            QueryExpr::LeftOutterIntersect(args) => {
+
+                    let first = args[0].generate(ctx)?;
+                    let second = args[1].generate(ctx)?;
+                    
+                    let id = ctx.fresh_id();
+
+                    let code = quote! {
+                        let mut #id = {
+                            use grass::algorithm::SortedIntersect;
+                            #first.sorted_left_outer_intersect(#second)
+                        };
+                    };
+                    ctx.append(code.into());
+                    return Ok(Some(id));
             }
             QueryExpr::Intersect(inputs) => {
                 let vars: Vec<_> = inputs.iter().map(|x| x.generate(ctx)).collect();
